@@ -1,0 +1,1 @@
+import{al as s,am as t}from"./index-1d78c4ac.js";function f(e,r){s(2,arguments);var a=t(e),i=t(r),n=a.getTime()-i.getTime();return n<0?-1:n>0?1:n}function o(e,r){if(e==null)throw new TypeError("assign requires that input parameter not be null or undefined");for(var a in r)Object.prototype.hasOwnProperty.call(r,a)&&(e[a]=r[a]);return e}export{o as a,f as c};
