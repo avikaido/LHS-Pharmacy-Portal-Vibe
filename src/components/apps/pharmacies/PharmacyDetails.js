@@ -203,6 +203,15 @@ const PharmacyDetails = () => {
                       </Typography>
                     </Grid>
 
+                    <Grid item lg={12} xs={12} mt={4}>
+                      <Typography variant="body2" color="text.secondary">
+                        Pharmacists
+                      </Typography>
+                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
+                        {pharmacyDetail.pharmacists.join(', ')}
+                      </Typography>
+                    </Grid>
+
                   </Grid>
                 </Box>
                 <Divider />
@@ -410,6 +419,20 @@ const PharmacyDetails = () => {
                           value={pharmacyDetail.servicesOffered.join(', ')}
                           onChange={(e) =>
                             dispatch(UpdatePharmacy(pharmacyDetail.id, 'servicesOffered', e.target.value))
+                          }
+                        />
+                      </Box>
+                      <Box px={3} py={1.5}>
+                        <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
+                          Pharmacists
+                        </Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          type="text"
+                          value={pharmacyDetail.pharmacists.join(', ')}
+                          onChange={(e) =>
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'pharmacists', e.target.value))
                           }
                         />
                       </Box>

@@ -26,8 +26,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [201, 202]
+  },
+  {
     id: 2,
     pharmacyName: 'Walgreens #456',
     pharmacyType: 'Retail',
@@ -47,8 +48,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [203]
+  },
+  {
     id: 3,
     pharmacyName: 'Good Health Pharmacy',
     pharmacyType: 'Independent',
@@ -68,8 +70,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [204, 205]
+  },
+  {
     id: 4,
     pharmacyName: 'Rite Aid #789',
     pharmacyType: 'Retail',
@@ -89,8 +92,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: true,
-},
-{
+    pharmacists: [206]
+  },
+  {
     id: 5,
     pharmacyName: 'HealthFirst Specialty Pharmacy',
     pharmacyType: 'Compounding',
@@ -110,7 +114,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-},
+    pharmacists: [207, 208]
+  },
   {
     id: 6,
     pharmacyName: 'Wellness Pharmacy',
@@ -131,8 +136,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [209]
+  },
+  {
     id: 7,
     pharmacyName: 'Happy Health Pharmacy',
     pharmacyType: 'Retail',
@@ -152,8 +158,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [210, 211]
+  },
+  {
     id: 8,
     pharmacyName: 'LifeCare Pharmacy',
     pharmacyType: 'Hospital Pharmacy',
@@ -173,8 +180,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [212]
+  },
+  {
     id: 9,
     pharmacyName: 'MedStar Pharmacy',
     pharmacyType: 'Hospital Pharmacy',
@@ -194,8 +202,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: true,
-},
-{
+    pharmacists: [213]
+  },
+  {
     id: 10,
     pharmacyName: 'Grand Rx',
     pharmacyType: 'Independent',
@@ -215,8 +224,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [214, 215]
+  },
+  {
     id: 11,
     pharmacyName: 'Peak Wellness Pharmacy',
     pharmacyType: 'Retail',
@@ -236,8 +246,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [216, 217]
+  },
+  {
     id: 12,
     pharmacyName: 'Healthway Pharmacy',
     pharmacyType: 'Independent',
@@ -257,8 +268,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [218]
+  },
+  {
     id: 13,
     pharmacyName: 'WellCare Pharmacy',
     pharmacyType: 'Retail',
@@ -278,8 +290,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [219, 220]
+  },
+  {
     id: 14,
     pharmacyName: 'MainStreet Rx',
     pharmacyType: 'Independent',
@@ -299,8 +312,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [221]
+  },
+  {
     id: 15,
     pharmacyName: 'CareMax Pharmacy',
     pharmacyType: 'Hospital Pharmacy',
@@ -320,7 +334,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-},
+    pharmacists: [222, 223]
+  },
   {
     id: 16,
     pharmacyName: 'Oakwood Pharmacy',
@@ -341,8 +356,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [224]
+  },
+  {
     id: 17,
     pharmacyName: 'Sunshine Health Pharmacy',
     pharmacyType: 'Retail',
@@ -362,8 +378,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [225, 226]
+  },
+  {
     id: 18,
     pharmacyName: 'RiverView Pharmacy',
     pharmacyType: 'Retail',
@@ -383,8 +400,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [227]
+  },
+  {
     id: 19,
     pharmacyName: 'Pinnacle Pharmacy',
     pharmacyType: 'Hospital Pharmacy',
@@ -404,7 +422,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-},
+    pharmacists: [228, 229]
+  },
   {
     id: 20,
     pharmacyName: 'CarePoint Pharmacy',
@@ -425,8 +444,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [230]
+  },
+  {
     id: 21,
     pharmacyName: 'PrimeCare Pharmacy',
     pharmacyType: 'Retail',
@@ -446,8 +466,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [231, 232]
+  },
+  {
     id: 22,
     pharmacyName: 'Cornerstone Pharmacy',
     pharmacyType: 'Compounding',
@@ -467,8 +488,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [233]
+  },
+  {
     id: 23,
     pharmacyName: 'Essential Rx',
     pharmacyType: 'Retail',
@@ -488,8 +510,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [234, 235]
+  },
+  {
     id: 24,
     pharmacyName: 'MetroHealth Pharmacy',
     pharmacyType: 'Hospital Pharmacy',
@@ -509,8 +532,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [236]
+  },
+  {
     id: 25,
     pharmacyName: 'FamilyFirst Pharmacy',
     pharmacyType: 'Independent',
@@ -530,8 +554,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [237, 238]
+  },
+  {
     id: 26,
     pharmacyName: 'UnityRx Pharmacy',
     pharmacyType: 'Retail',
@@ -551,8 +576,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [239]
+  },
+  {
     id: 27,
     pharmacyName: 'Health Solutions Pharmacy',
     pharmacyType: 'Hospital Pharmacy',
@@ -572,8 +598,9 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-},
-{
+    pharmacists: [240, 241]
+  },
+  {
     id: 28,
     pharmacyName: 'AccessCare Pharmacy',
     pharmacyType: 'Compounding',
@@ -593,8 +620,9 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
-{
+    pharmacists: [242]
+  },
+  {
     id: 29,
     pharmacyName: 'BrightView Pharmacy',
     pharmacyType: 'Retail',
@@ -614,7 +642,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-},
+    pharmacists: [243, 244]
+  },
   {
     id: 30,
     pharmacyName: 'Neighborhood Wellness Pharmacy',
@@ -635,7 +664,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-},
+    pharmacists: [245]
+  }
 ];
 mock.onGet('/api/data/pharmacies/PharmaciesData').reply(() => {
   const pharmacies = PharmacyList;
