@@ -18,6 +18,7 @@ import {
   DeletePatient,
   toggleStarredPatient,
 } from 'src/store/apps/patients/PatientSlice';
+
 import BlankCard from '../../shared/BlankCard';
 import { IconPencil, IconStar, IconTrash, IconDeviceFloppy } from '@tabler/icons';
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
@@ -31,9 +32,9 @@ const PatientDetails = () => {
   const dispatch = useDispatch();
 
   const tableData = [
-    { id: 1, title: 'Firstname', alias: 'firstname', gdata: patientDetail?.firstname || '', type: 'text' },
+    { id: 1, title: 'First Name', alias: 'firstname', gdata: patientDetail?.firstname || '', type: 'text' },
     { id: 2, title: 'Middle Initial', alias: 'middleInitial', gdata: patientDetail?.middleInitial || '', type: 'text' },
-    { id: 3, title: 'Lastname', alias: 'lastname', gdata: patientDetail?.lastname || '', type: 'text' },
+    { id: 3, title: 'Last Name', alias: 'lastname', gdata: patientDetail?.lastname || '', type: 'text' },
     { id: 4, title: 'Date of Birth', alias: 'dob', gdata: patientDetail?.dob || '', type: 'text' },
     { id: 5, title: 'Gender', alias: 'gender', gdata: patientDetail?.gender || '', type: 'text' },
     { id: 6, title: 'Email', alias: 'email', gdata: patientDetail?.email || '', type: 'email' },
