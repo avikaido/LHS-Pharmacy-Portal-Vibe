@@ -219,7 +219,7 @@ const PharmacistDetails = () => {
                 </BlankCard>
               </>
             )}
-          </Box>
+          
         </>
       ) : (
         <Box p={3} height="50vh" display={'flex'} justifyContent="center" alignItems={'center'}>

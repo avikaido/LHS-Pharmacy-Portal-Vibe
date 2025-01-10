@@ -30,10 +30,38 @@ const PharmacyDetails = () => {
   const editPharmacy = useSelector((state) => state.pharmaciesReducer.editPharmacy);
   const dispatch = useDispatch();
 
+  const tableData = [
+    { id: 1, title: 'Pharmacy Name', alias: 'pharmacyName', gdata: patientDetail?.firstname || '', type: 'text' },
+    { id: 2, title: 'Pharmacy Chain', alias: 'pharmacyDetail', gdata: patientDetail?.middleInitial || '', type: 'text' },
+    { id: 3, title: 'Phamacy Type', alias: 'pharmacyType', gdata: patientDetail?.lastname || '', type: 'text' },
+    { id: 4, title: 'Date of Birth', alias: 'dob', gdata: patientDetail?.dob || '', type: 'text' },
+    { id: 5, title: 'Gender', alias: 'gender', gdata: patientDetail?.gender || '', type: 'text' },
+    { id: 6, title: 'Email', alias: 'email', gdata: patientDetail?.email || '', type: 'email' },
+    { id: 7, title: 'Phone', alias: 'phone', gdata: patientDetail?.phone || '', type: 'phone' },
+    { id: 8, title: 'Address', alias: 'address', gdata: patientDetail?.address || '', type: 'text' },
+    { id: 9, title: 'Address Line 2', alias: 'address2', gdata: patientDetail?.address2 || '', type: 'text' },
+    { id: 10, title: 'City', alias: 'city', gdata: patientDetail?.city || '', type: 'text' },
+    { id: 11, title: 'State', alias: 'state', gdata: patientDetail?.state || '', type: 'text' },
+    { id: 12, title: 'Zip Code', alias: 'zipcode', gdata: patientDetail?.zipcode || '', type: 'text' },
+    { id: 13, title: 'Emergency Contact Name', alias: 'ecname', gdata: patientDetail?.ecname || '', type: 'text' },
+    { id: 14, title: 'Emergency Contact Relation', alias: 'ecrelation', gdata: patientDetail?.ecrelation || '', type: 'text' },
+    { id: 15, title: 'Emergency Contact Phone', alias: 'ecphone', gdata: patientDetail?.ecphone || '', type: 'phone' },
+    { id: 16, title: 'Primary Insurance', alias: 'insurance1', gdata: patientDetail?.insurance1 || '', type: 'text' },
+    { id: 17, title: 'Secondary Insurance', alias: 'insurance2', gdata: patientDetail?.insurance2 || '', type: 'text' },
+    { id: 18, title: 'Notes', alias: 'notes', gdata: patientDetail?.notes || '', type: 'text' },
+    { id: 19, title: 'Requests', alias: 'requests', gdata: patientDetail?.requests.join(', ') || '', type: 'text' },
+  ];
+
   return (
     <>
-      {pharmacyDetail && !pharmacyDetail.deleted ? (
+      {/* ------------------------------------------- */}
+      {/* Pharmacy Detail Part */}
+      {/* ------------------------------------------- */}
+      {patientDetail && !patientDetail.deleted ? (
         <>
+          {/* ------------------------------------------- */}
+          {/* Header Part */}
+          {/* ------------------------------------------- */}
           <Box p={3} py={2} display={'flex'} alignItems="center">
             <Typography variant="h5">Pharmacy Details</Typography>
             <Stack gap={0} direction="row" ml={'auto'}>
@@ -66,6 +94,9 @@ const PharmacyDetails = () => {
             </Stack>
           </Box>
           <Divider />
+          {/* ------------------------------------------- */}
+          {/* Pharmacy Table Part */}
+          {/* ------------------------------------------- */}
           <Box sx={{ overflow: 'auto' }}>
             {!editPharmacy ? (
               <Box>
