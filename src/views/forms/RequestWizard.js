@@ -742,39 +742,7 @@ const RequestWizard = () => {
                     Additional Info
                   </Typography>
                 </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>Emergency Contact Name</FormLabel>
-                  <TextField
-                    id="ecname"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.ecname}
-                    onChange={(e) => setValues({ ...values, ecname: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>Emergency Contact Relation</FormLabel>
-                  <TextField
-                    id="ecrelation"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.ecrelation}
-                    onChange={(e) => setValues({ ...values, ecrelation: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>Emergency Contact Phone</FormLabel>
-                  <TextField
-                    id="ecphone"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.ecphone}
-                    onChange={(e) => setValues({ ...values, ecphone: e.target.value })}
-                  />
-                </Grid>
+                
                 
                 <Grid item xs={12} lg={6}>
                   <FormLabel>Primary Insurance</FormLabel>

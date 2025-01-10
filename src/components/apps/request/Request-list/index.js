@@ -23,6 +23,7 @@ import {
   InputAdornment,
   Chip,
 } from '@mui/material';
+import { format, isValid, parseISO } from 'date-fns';
 import {
   IconEdit,
   IconEye,
@@ -40,11 +41,11 @@ const RequestList = () => {
   const { requests, deleteRequest } = useContext(RequestContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('All');
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [selectedRequests, setSelectedRequests] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-  const tabItem = ['All', 'Shipped', 'Delivered', 'Pending'];
+  const tabItem = ['All', 'Processing', 'Complete', 'Created'];
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Handle status filter change
@@ -56,8 +57,8 @@ const RequestList = () => {
   // Filter requests based on search term
   const filteredRequests = requests.filter((request) => {
     return (
-      (request.billFrom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.billTo.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (request.patientlastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.doctorname.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (activeTab === 'All' || request.status === activeTab)
     );
   });
@@ -67,28 +68,28 @@ const RequestList = () => {
   };
 
   // Calculate the counts for different statuses
-  const Shipped = requests.filter((t) => t.status === 'Shipped').length;
-  const Delivered = requests.filter((t) => t.status === 'Delivered').length;
-  const Pending = requests.filter((t) => t.status === 'Pending').length;
+  const Processing = requests.filter((t) => t.status === 'Processing').length;
+  const Complete = requests.filter((t) => t.status === 'Complete').length;
+  const Created = requests.filter((t) => t.status === 'Created').length;
 
   // Toggle all checkboxes
   const toggleSelectAll = () => {
     const selectAllValue = !selectAll;
     setSelectAll(selectAllValue);
     if (selectAllValue) {
-      setSelectedProducts(requests.map((request) => request.id));
+      setSelectedRequests(requests.map((request) => request.id));
     } else {
-      setSelectedProducts([]);
+      setSelectedRequests([]);
     }
   };
 
-  // Toggle individual product selection
-  const toggleSelectProduct = (productId) => {
-    const index = selectedProducts.indexOf(productId);
+  // Toggle individual request selection
+  const toggleSelectRequest = (requestId) => {
+    const index = selectedRequests.indexOf(requestId);
     if (index === -1) {
-      setSelectedProducts([...selectedProducts, productId]);
+      setSelectedRequests([...selectedRequests, requestId]);
     } else {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
+      setSelectedRequests(selectedRequests.filter((id) => id !== requestId));
     }
   };
 
@@ -97,12 +98,12 @@ const RequestList = () => {
     setOpenDeleteDialog(true);
   };
 
-  // Handle confirming deletion of selected products
+  // Handle confirming deletion of selected requests
   const handleConfirmDelete = async () => {
-    for (const productId of selectedProducts) {
-      await deleteRequest(productId);
+    for (const requestId of selectedRequests) {
+      await deleteRequest(requestId);
     }
-    setSelectedProducts([]);
+    setSelectedRequests([]);
     setSelectAll(false);
     setOpenDeleteDialog(false);
   };
@@ -111,6 +112,12 @@ const RequestList = () => {
   const handleCloseDeleteDialog = () => {
     setOpenDeleteDialog(false);
   };
+
+  const orderDate = selectedRequests.orderDate
+    ? isValid(parseISO(selectedRequests.orderDate))
+      ? format(parseISO(selectedRequests.orderDate), 'MM/dd/yyyy hh:mm')
+      : 'Invalid Date'
+    : format(new Date(), 'MM/dd/yyyy hh:mm');
 
   return (
     <Box>
@@ -143,7 +150,7 @@ const RequestList = () => {
           </Box>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Box bgcolor="secondary.light" p={3} onClick={() => handleClick("Shipped")} sx={{ cursor: "pointer" }}>
+          <Box bgcolor="secondary.light" p={3} onClick={() => handleClick("Processing")} sx={{ cursor: "pointer" }}>
             <Stack direction="row" gap={2} alignItems="center">
               <Box
                 width={38}
@@ -163,14 +170,14 @@ const RequestList = () => {
                 </Typography>
               </Box>
               <Box>
-                <Typography>Shipped</Typography>
-                <Typography fontWeight={500}>{Shipped} Requests</Typography>
+                <Typography>Processing</Typography>
+                <Typography fontWeight={500}>{Processing} Requests</Typography>
               </Box>
             </Stack>
           </Box>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Box bgcolor="success.light" p={3} onClick={() => handleClick("Delivered")} sx={{ cursor: "pointer" }}>
+          <Box bgcolor="success.light" p={3} onClick={() => handleClick("Complete")} sx={{ cursor: "pointer" }}>
             <Stack direction="row" gap={2} alignItems="center">
               <Box
                 width={38}
@@ -190,14 +197,14 @@ const RequestList = () => {
                 </Typography>
               </Box>
               <Box>
-                <Typography>Delivered</Typography>
-                <Typography fontWeight={500}>{Delivered} Requests</Typography>
+                <Typography>Complete</Typography>
+                <Typography fontWeight={500}>{Complete} Requests</Typography>
               </Box>
             </Stack>
           </Box>
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
-          <Box bgcolor="warning.light" p={3} onClick={() => handleClick("Pending")} sx={{ cursor: "pointer" }}>
+          <Box bgcolor="warning.light" p={3} onClick={() => handleClick("Created")} sx={{ cursor: "pointer" }}>
             <Stack direction="row" gap={2} alignItems="center">
               <Box
                 width={38}
@@ -217,8 +224,8 @@ const RequestList = () => {
                 </Typography>
               </Box>
               <Box>
-                <Typography>Pending</Typography>
-                <Typography fontWeight={500}>{Pending} Requests</Typography>
+                <Typography>Created</Typography>
+                <Typography fontWeight={500}>{Created} Requests</Typography>
               </Box>
             </Stack>
           </Box>
@@ -275,6 +282,11 @@ const RequestList = () => {
                   Id
                 </Typography>
               </TableCell>
+               <TableCell>
+                <Typography variant="h6" fontSize="14px">
+                  Date/Time
+                </Typography>
+              </TableCell>
               <TableCell>
                 <Typography variant="h6" fontSize="14px">
                   Patient
@@ -288,6 +300,11 @@ const RequestList = () => {
               <TableCell>
                 <Typography variant="h6" fontSize="14px">
                   Pharmacy
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="h6" fontSize="14px">
+                  Doctor
                 </Typography>
               </TableCell>
               <TableCell>
@@ -307,8 +324,8 @@ const RequestList = () => {
               <TableRow key={request.id}>
                 <TableCell padding="checkbox">
                   <CustomCheckbox
-                    checked={selectedProducts.includes(request.id)}
-                    onChange={() => toggleSelectProduct(request.id)}
+                    checked={selectedRequests.includes(request.id)}
+                    onChange={() => toggleSelectRequest(request.id)}
                   />
                 </TableCell>
                 <TableCell>
@@ -316,23 +333,30 @@ const RequestList = () => {
                     {request.id}
                   </Typography>
                 </TableCell>
+                 <TableCell>
+                  
+                 <Chip size="small" color="secondary" variant="outlined" label={orderDate}></Chip>
+                </TableCell>
                 <TableCell>
                   <Typography variant="h6" fontSize="14px">
-                    {request.billFrom}
+                    {request.patientfirstname} {request.patientmiddleInitial} {request.patientlastname} 
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography fontSize="14px">{request.billTo}</Typography>
+                  <Typography fontSize="14px">{request.orderitem}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography fontSize="14px">{request.totalCost}</Typography>
+                  <Typography fontSize="14px">{request.pharmacyname}</Typography>
                 </TableCell>
                 <TableCell>
-                  {request.status === 'Shipped' ? (
+                  <Typography fontSize="14px">{request.doctorname}</Typography>
+                </TableCell>
+                <TableCell>
+                  {request.status === 'Processing' ? (
                     <Chip color="primary" label={request.status} size="small" />
-                  ) : request.status === 'Delivered' ? (
+                  ) : request.status === 'Complete' ? (
                     <Chip color="success" label={request.status} size="small" />
-                  ) : request.status === 'Pending' ? (
+                  ) : request.status === 'Created' ? (
                     <Chip color="warning" label={request.status} size="small" />
                   ) : (
                     ''
@@ -343,7 +367,7 @@ const RequestList = () => {
                     <IconButton
                       color="success"
                       component={Link}
-                      to={`/apps/request/edit/${request.billFrom}`}
+                      to={`/apps/request/edit/${request.id}`}
                     >
                       <IconEdit width={22} />
                     </IconButton>
@@ -352,7 +376,7 @@ const RequestList = () => {
                     <IconButton
                       color="primary"
                       component={Link}
-                      to={`/apps/request/detail/${request.billFrom}`}
+                      to={`/apps/request/detail/${request.id}`}
                     >
                       <IconEye width={22} />
                     </IconButton>
@@ -361,7 +385,7 @@ const RequestList = () => {
                     <IconButton
                       color="error"
                       onClick={() => {
-                        setSelectedProducts([request.id]);
+                        setSelectedRequests([request.id]);
                         handleDelete();
                       }}
                     >
