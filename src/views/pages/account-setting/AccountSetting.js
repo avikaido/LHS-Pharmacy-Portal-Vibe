@@ -75,24 +75,32 @@ const AccountSetting = () => {
                   {...a11yProps(0)}
                 />
 
-                <Tab
+                {/* ------------------------------------------- */}
+                {/* Disabled - Notifications - V1.0 */}
+                {/* Changed - Notifications - V1.0 */}
+                {/* <Tab
                   iconPosition="start"
                   icon={<IconBell size="22" />}
                   label="Notifications"
                   {...a11yProps(1)}
-                />
+                /> */}
+                {/* ------------------------------------------- */}
+                {/* Changed - Bills - V1.0 */}
                 <Tab
                   iconPosition="start"
                   icon={<IconArticle size="22" />}
                   label="Bills"
                   {...a11yProps(2)}
                 />
-                <Tab
+                {/* ------------------------------------------- */}
+                {/* Disabled - Security - V1.0 */}
+                {/* <Tab
                   iconPosition="start"
                   icon={<IconLock size="22" />}
                   label="Security"
                   {...a11yProps(3)}
-                />
+                /> */}
+                {/* ------------------------------------------- */}
               </Tabs>
             </Box>
             <Divider />
@@ -100,11 +108,12 @@ const AccountSetting = () => {
               <TabPanel value={value} index={0}>
                 <AccountTab />
               </TabPanel>
+              {/* Changed - Bills - V1.0 */}
               <TabPanel value={value} index={1}>
-                <NotificationTab />
+                <BillsTab />
               </TabPanel>
               <TabPanel value={value} index={2}>
-                <BillsTab />
+                <NotificationTab />
               </TabPanel>
               <TabPanel value={value} index={3}>
                 <SecurityTab />

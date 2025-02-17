@@ -26,7 +26,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-    pharmacists: [201, 202]
+    pharmacists: [201, 202],
+    requests: [101, 102],
   },
   {
     id: 2,
@@ -48,7 +49,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-    pharmacists: [203]
+    pharmacists: [203],
+    requests: [101, 102],
   },
   {
     id: 3,
@@ -70,7 +72,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-    pharmacists: [204, 205]
+    pharmacists: [204, 205],
+    requests: [101, 102],
   },
   {
     id: 4,
@@ -92,7 +95,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: true,
-    pharmacists: [206]
+    pharmacists: [206],
+    requests: [101, 102],
   },
   {
     id: 5,
@@ -114,7 +118,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-    pharmacists: [207, 208]
+    pharmacists: [207, 208],
+    requests: [101, 102],
   },
   {
     id: 6,
@@ -136,7 +141,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-    pharmacists: [209]
+    pharmacists: [209],
+    requests: [101, 102],
   },
   {
     id: 7,
@@ -158,7 +164,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [210, 211]
+    pharmacists: [210, 211],
+    requests: [101, 102],
   },
   {
     id: 8,
@@ -180,7 +187,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-    pharmacists: [212]
+    pharmacists: [212],
+    requests: [101, 102],
   },
   {
     id: 9,
@@ -202,7 +210,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: true,
-    pharmacists: [213]
+    pharmacists: [213],
+    requests: [101, 102],
   },
   {
     id: 10,
@@ -224,7 +233,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-    pharmacists: [214, 215]
+    pharmacists: [214, 215],
+    requests: [101, 102],
   },
   {
     id: 11,
@@ -246,7 +256,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-    pharmacists: [216, 217]
+    pharmacists: [216, 217],
+    requests: [101, 102],
   },
   {
     id: 12,
@@ -268,7 +279,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-    pharmacists: [218]
+    pharmacists: [218],
+    requests: [101, 102],
   },
   {
     id: 13,
@@ -290,7 +302,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-    pharmacists: [219, 220]
+    pharmacists: [219, 220],
+    requests: [101, 102],
   },
   {
     id: 14,
@@ -312,7 +325,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [221]
+    pharmacists: [221],
+    requests: [101, 102],
   },
   {
     id: 15,
@@ -334,7 +348,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-    pharmacists: [222, 223]
+    pharmacists: [222, 223],
+    requests: [101, 102],
   },
   {
     id: 16,
@@ -356,7 +371,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-    pharmacists: [224]
+    pharmacists: [224],
+    requests: [101, 102],
   },
   {
     id: 17,
@@ -378,7 +394,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-    pharmacists: [225, 226]
+    pharmacists: [225, 226],
+    requests: [101, 102],
   },
   {
     id: 18,
@@ -400,7 +417,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [227]
+    pharmacists: [227],
+    requests: [101, 102],
   },
   {
     id: 19,
@@ -422,7 +440,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: false,
     deleted: false,
-    pharmacists: [228, 229]
+    pharmacists: [228, 229],
+    requests: [101, 102],
   },
   {
     id: 20,
@@ -444,7 +463,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [230]
+    pharmacists: [230],
+    requests: [101, 102],
   },
   {
     id: 21,
@@ -466,7 +486,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-    pharmacists: [231, 232]
+    pharmacists: [231, 232],
+    requests: [101, 102],
   },
   {
     id: 22,
@@ -488,7 +509,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [233]
+    pharmacists: [233],
+    requests: [101, 102],
   },
   {
     id: 23,
@@ -510,7 +532,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-    pharmacists: [234, 235]
+    pharmacists: [234, 235],
+    requests: [101, 102],
   },
   {
     id: 24,
@@ -532,7 +555,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [236]
+    pharmacists: [236],
+    requests: [101, 102],
   },
   {
     id: 25,
@@ -554,7 +578,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: true,
     deleted: false,
-    pharmacists: [237, 238]
+    pharmacists: [237, 238],
+    requests: [101, 102],
   },
   {
     id: 26,
@@ -576,7 +601,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [239]
+    pharmacists: [239],
+    requests: [101, 102],
   },
   {
     id: 27,
@@ -598,7 +624,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-    pharmacists: [240, 241]
+    pharmacists: [240, 241],
+    requests: [101, 102],
   },
   {
     id: 28,
@@ -620,7 +647,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [242]
+    pharmacists: [242],
+    requests: [101, 102],
   },
   {
     id: 29,
@@ -642,7 +670,8 @@ export const PharmacyList = [
     frequentlycontacted: true,
     starred: false,
     deleted: false,
-    pharmacists: [243, 244]
+    pharmacists: [243, 244],
+    requests: [101, 102],
   },
   {
     id: 30,
@@ -664,7 +693,8 @@ export const PharmacyList = [
     frequentlycontacted: false,
     starred: true,
     deleted: false,
-    pharmacists: [245]
+    pharmacists: [245],
+    requests: [101, 102],
   }
 ];
 mock.onGet('/api/data/pharmacies/PharmaciesData').reply(() => {

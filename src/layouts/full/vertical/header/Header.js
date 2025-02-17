@@ -57,32 +57,45 @@ const Header = () => {
         {/* Search Dropdown */}
         {/* ------------------------------------------- */}
         <Search />
-        {lgUp ? (
+        
+        {/* Disabled - Top Menu - V1.0 */}
+          {/* 
+          {lgUp ? (
           <>
             <Navigation />
           </>
         ) : null}
+         */}
+        {/* ------------------------------------------- */}
 
         <Box flexGrow={1} />
         <Stack spacing={1} direction="row" alignItems="center">
-          <Language />
+          {/* Disabled - Language - V1.0 */}
           {/* ------------------------------------------- */}
-          {/* Ecommerce Dropdown */}
+          {/* <Language /> */}
           {/* ------------------------------------------- */}
-          <Cart />
 
+          {/* ------------------------------------------- */}
+          {/* Ecommerce Dropdown - Disabled - V1.0 */}
+          {/* ------------------------------------------- */}
+          {/* <Cart /> 
           <IconButton size="large" color="inherit">
             {customizer.activeMode === 'light' ? (
               <IconMoon size="21" stroke="1.5" onClick={() => dispatch(setDarkMode('dark'))} />
             ) : (
               <IconSun size="21" stroke="1.5" onClick={() => dispatch(setDarkMode('light'))} />
             )}
-          </IconButton>
+          </IconButton> */}
 
           {/* ------------------------------------------- */}
           {/* End Ecommerce Dropdown */}
           {/* ------------------------------------------- */}
-          <Notifications />
+          
+          {/* Disabled - Notifications - V1.0 */}
+          {/* ------------------------------------------- */}
+          {/* <Notifications /> */}
+          {/* ------------------------------------------- */}
+
           {/* ------------------------------------------- */}
           {/* Toggle Right Sidebar for mobile */}
           {/* ------------------------------------------- */}

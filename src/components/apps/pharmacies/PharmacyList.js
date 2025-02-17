@@ -37,29 +37,37 @@ const PharmacyList = ({ showrightSidebar }) => {
           (c) => !c.deleted && c.starred && c.pharmacyName.toLocaleLowerCase().includes(pharmacySearch),
         );
 
-      case 'engineering_department':
+      case 'retail_pharmacy':
         return pharmacies.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Engineering' &&
+            c.pharmacyType === 'Retail' &&
             c.pharmacyName.toLocaleLowerCase().includes(pharmacySearch),
         );
 
-      case 'support_department':
+      case 'compounding_pharmacy':
         return pharmacies.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Support' &&
+            c.pharmacyType === 'Compounding' &&
             c.pharmacyName.toLocaleLowerCase().includes(pharmacySearch),
         );
 
-      case 'sales_department':
-        return pharmacies.filter(
+      case 'independent_pharmacy':
+        return pharmacyType.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Sales' &&
+            c.pharmacyType === 'Independent' &&
             c.pharmacyName.toLocaleLowerCase().includes(pharmacySearch),
         );
+
+      case 'hospital_pharmacy':
+        return pharmacyType.filter(
+          (c) =>
+            !c.deleted &&
+            c.pharmacyType === 'Hospital' &&
+            c.pharmacyName.toLocaleLowerCase().includes(pharmacySearch),
+        );  
 
       default:
         throw new Error(`Unknown filter: ${filter}`);

@@ -5,6 +5,7 @@ import NotesReducer from './apps/notes/NotesSlice';
 import EmailReducer from './apps/email/EmailSlice';
 import TicketReducer from './apps/tickets/TicketSlice';
 import ItemReducer from './apps/items/ItemSlice';
+import UsersReducer from './apps/users/UserSlice';
 import PatientsReducer from './apps/patients/PatientSlice';
 import PharmaciesReducer from './apps/pharmacies/PharmacySlice';
 import PharmacistsReducer from './apps/pharmacists/PharmacistSlice';
@@ -18,6 +19,7 @@ export const store = configureStore({
     chatReducer: ChatsReducer,
     emailReducer: EmailReducer,
     notesReducer: NotesReducer,
+    usersReducer: UsersReducer,
     patientsReducer: PatientsReducer,
     pharmaciesReducer: PharmaciesReducer,
     pharmacistsReducer: PharmacistsReducer,

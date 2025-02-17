@@ -27,9 +27,12 @@ const PharmacistListItem = ({
 
   return (
     <ListItemButton sx={{ mb: 1 }} selected={active}>
-      <ListItemAvatar>
+      {/* ------------------------------------------- */}
+      {/* Disabled - Avatars - V1.0 */}
+      {/* <ListItemAvatar>
         <Avatar alt={image} src={image} />
-      </ListItemAvatar>
+      </ListItemAvatar>*/}
+      {/* ------------------------------------------- */}
       <ListItemText>
         <Stack direction="row" gap="10px" alignItems="center">
           <Box mr="auto" onClick={onPharmacistClick}>
@@ -40,12 +43,15 @@ const PharmacistListItem = ({
               {department}
             </Typography>
           </Box>
-          <IconStar
+          {/* ------------------------------------------- */}
+          {/* Disabled - Favorites - V1.0 */}
+          {/* <IconStar
             onClick={onStarredClick}
             size="16"
             stroke={1.5}
             style={{ fill: starred ? '#FFC107' : '', stroke: starred ? '#FFC107' : '' }}
-          />
+          />*/}
+          {/* ------------------------------------------- */}
           <IconTrash onClick={onDeleteClick} size="16" stroke={1.5} />
         </Stack>
       </ListItemText>

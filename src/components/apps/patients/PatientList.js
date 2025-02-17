@@ -37,7 +37,7 @@ const PatientList = ({ showrightSidebar }) => {
           (p) => !p.deleted && p.starred && p.firstname.toLowerCase().includes(patientSearch),
         );
 
-      case 'emergency_contact':
+      case 'new_patient':
         return patients.filter(
           (p) =>
             !p.deleted &&
@@ -45,13 +45,21 @@ const PatientList = ({ showrightSidebar }) => {
             p.firstname.toLowerCase().includes(patientSearch),
         );
 
-      case 'request_history':
+      case 'repeat_patient':
         return patients.filter(
           (p) =>
             !p.deleted &&
             p.requests && p.requests.length > 0 &&
             p.firstname.toLowerCase().includes(patientSearch),
         );
+
+      case 'older_patient':
+        return patients.filter(
+          (p) =>
+            !p.deleted &&
+            p.requests && p.requests.length > 0 &&
+            p.firstname.toLowerCase().includes(patientSearch),
+        );  
 
       default:
         throw new Error(`Unknown filter: ${filter}`);

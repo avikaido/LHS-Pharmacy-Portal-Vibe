@@ -16,6 +16,7 @@ import {
   CircularProgress,
   FormLabel,
   TextField,
+  Card,
 } from '@mui/material';
 import PageContainer from '../../components/container/PageContainer';
 import Breadcrumb from '../../layouts/full/shared/breadcrumb/Breadcrumb';
@@ -28,8 +29,9 @@ import { Stack } from '@mui/system';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchItems, SearchItem } from '../../store/apps/items/ItemSlice';
 import axios from 'axios';
+import Logo from 'src/layouts/full/shared/logo/Logo';
 
-const steps = ['Medicine Info', 'Physician Info', 'Patient Info', 'Additional Info', 'Finish'];
+const steps = ['Medicine Info', 'Physician Info', 'Patient Info', 'Finish'];
 
 const genders = [
   {
@@ -139,6 +141,7 @@ const RequestWizard = () => {
   const [selectedPhysician, setSelectedPhysician] = useState(null);
   const [physicianSuggestions, setPhysicianSuggestions] = useState([]);
   const [loadingPhysician, setLoadingPhysician] = useState(false);
+  const [physicianState, setPhysicianState] = useState('');
 
   const [values, setValues] = React.useState({
     firstname: '',
@@ -196,7 +199,8 @@ const RequestWizard = () => {
           params: {
             version: '2.1',
             last_name: searchTermPhysician,
-            limit: 10,
+            state: physicianState,
+            limit: 100,
           },
         });
         setPhysicianSuggestions(response.data.results || []);
@@ -209,7 +213,7 @@ const RequestWizard = () => {
 
     const debounceFetch = setTimeout(fetchPhysicianSuggestions, 300);
     return () => clearTimeout(debounceFetch);
-  }, [searchTermPhysician]);
+  }, [searchTermPhysician, physicianState]);
 
   const handleChange2 = (event) => {
     setValues({ ...values, gender: event.target.value });
@@ -266,7 +270,30 @@ const RequestWizard = () => {
     switch (step) {
       case 0:
         return (
+          
+
           <Box>
+            <Grid spacing={3} container>
+            <Grid item xs={12} lg={12}>
+            </Grid>
+              <Grid item xs={12} lg={12}>
+                  <Typography variant="primary">
+                    Request a prescription from your healthcare provider on your behalf!
+                  </Typography>
+              </Grid>    
+              <Grid item xs={12} lg={12}>
+                  <Typography variant="primary">
+                    The following questions are required for us to send the request.
+                  </Typography>
+              </Grid>
+              <Grid item xs={12} lg={12}>  
+                  <Typography variant="primary">
+                    (Don't worry, most doctors approve requests initiated through our prescription screening tool.)
+                  </Typography>
+              </Grid>
+            </Grid>
+            
+            <Grid item xs={12} lg={12}> 
             {/* Medicine Autosuggest Field */}
             <CustomFormLabel htmlFor="item">Medicine or Device</CustomFormLabel>
             <CustomTextField
@@ -276,20 +303,26 @@ const RequestWizard = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            </Grid>
+            <Grid item xs={12} lg={12}>
             {filteredItems.length > 0 && (
               <List>
                 {filteredItems.map((item) => (
                   <ListItem button key={item.Id} onClick={() => handleSelectItem(item)}>
-                    <ListItemText primary={item.GenericName || item.BrandName} />
+                    <ListItemText primary={`${item.GenericName} (${item.BrandName})`} />
                   </ListItem>
                 ))}
               </List>
             )}
-
+            </Grid>
             {/* Display Selected Item Details */}
             {selectedItem && (
               <>
-                
+                 
+                 {/* ------------------------------------------- */}
+                    {/* Disabled - Item Unfo - V1.0 */}
+                    {/*
+
                 <Grid container>
 
                   <Grid item xs={12} lg={12} mt={4}>
@@ -369,7 +402,8 @@ const RequestWizard = () => {
                       {selectedItem.PregnancyCategory}
                     </Typography>
                   </Grid>
-                </Grid>
+                </Grid> */}
+                {/* ------------------------------------------- */}
               </>
             )}
 
@@ -392,6 +426,10 @@ const RequestWizard = () => {
                   </Typography>
                 
               </Box>
+
+              {/* ------------------------------------------- */}
+                    {/* Disabled - Item Unfo - V1.0 */}
+                    {/* 
               <Grid container>
               <Grid item lg={6} xs={12} mt={4}>
                 <Typography variant="body2" color="text.secondary">
@@ -509,57 +547,185 @@ const RequestWizard = () => {
                       </Typography>
                     </Grid>
               </Grid>
-               
+               */}
+                {/* ------------------------------------------- */}
           </Box>
         );
-
+      
       case 1:
         return (
           <Box>
-            <CustomFormLabel htmlFor="physician">Physician Last Name</CustomFormLabel>
-            <CustomTextField
-              id="physician"
-              variant="outlined"
-              fullWidth
-              value={searchTermPhysician}
-              onChange={(e) => setSearchTermPhysician(e.target.value)}
-            />
-            {loadingPhysician && <CircularProgress />}
-            <List>
-              {physicianSuggestions.map((physician) => (
-                <ListItem button key={physician.number} onClick={() => handleSelectPhysician(physician)}>
-                  <ListItemText
-                    primary={`${physician.basic.last_name} - ${physician.taxonomies[0]?.desc} - ${physician.addresses[0].city}, ${physician.addresses[0].state}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
 
+               
+
+            {/* New State Dropdown Field */}
+          <Grid spacing={3} container>
+
+            <Grid item xs={12} lg={12}>
+            </Grid>
+              
+            <Grid item xs={12} lg={12}>
+              <Typography variant="primary">
+                Search for your physician/provider by first selecting the state and then typing in their last name.
+              </Typography>
+            </Grid>
+            <Grid item xs={12} lg={6}>
+              <CustomFormLabel htmlFor="physician-state">State</CustomFormLabel>
+                <CustomSelect
+                  id="physician-state"
+                  fullWidth
+                  variant="outlined"
+                  value={physicianState}
+                  onChange={(e) => setPhysicianState(e.target.value)}
+                >
+                  {states.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </CustomSelect>
+            </Grid>
+            <Grid item xs={12} lg={6}>
+                <CustomFormLabel htmlFor="physician">Physician Last Name</CustomFormLabel>
+                <CustomTextField
+                  id="physician"
+                  variant="outlined"
+                  fullWidth
+                  value={searchTermPhysician}
+                  onChange={(e) => setSearchTermPhysician(e.target.value)}
+                />
+            </Grid>
+            <Grid item xs={12} lg={12}> 
+                {loadingPhysician && <CircularProgress />}
+                <List>
+                  {physicianSuggestions.map((physician) => (
+                    <ListItem button key={physician.number} onClick={() => handleSelectPhysician(physician)}>
+                      <ListItemText
+                        primary={`${physician.basic.last_name}, ${physician.basic.first_name} - ${physician.taxonomies[0]?.desc} - ${physician.addresses[0].city}, ${physician.addresses[0].state}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+            </Grid> 
+          </Grid>
             {/* Display Selected Physician Details */}
             {selectedPhysician && (
-              <>
-                <Typography variant="h6" fontWeight="500" noWrap>
-                  Physician Info
-                </Typography>
-                <Grid container>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Physician Name
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedPhysician.basic.first_name} {selectedPhysician.basic.last_name}
+                <Grid spacing={3} container>
+                  <Grid item xs={12} lg={12}>
+                    <Typography variant="h6" fontWeight="500" noWrap>
+                      Physician Info
                     </Typography>
                   </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Physician Address
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedPhysician.addresses[0].address_1}, {selectedPhysician.addresses[0].city}, {selectedPhysician.addresses[0].state}
-                    </Typography>
+                  <Grid item xs={12} lg={6}>
+                    <FormLabel>First Name</FormLabel>
+                    <TextField
+                      id="physician_firstname"
+                      size="small"
+                      variant="outlined"
+                      fullWidth
+                      required
+                      value={selectedPhysician.basic.first_name}
+                      onChange={(e) => setValues({ ...values, physician_firstname: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} lg={6}>
+                      <FormLabel>Last Name</FormLabel>
+                      <TextField
+                        id="physician_lastname"
+                        size="small"
+                        variant="outlined"
+                        fullWidth
+                        required
+                        value={selectedPhysician.basic.last_name}
+                        onChange={(e) => setValues({ ...values, physician_lastname: e.target.value })}
+                      />
+                  </Grid>
+                  <Grid item xs={12} lg={6}>
+                    <FormLabel>Phone</FormLabel>
+                    <TextField
+                      id="physician_phone"
+                      size="small"
+                      variant="outlined"
+                      fullWidth
+                      value={selectedPhysician.addresses[0].telephone_phone}
+                      onChange={(e) => setValues({ ...values, physician_phone: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} lg={6}>
+                    <FormLabel>Fax</FormLabel>
+                    <TextField
+                      id="physician_fax"
+                      size="small"
+                      variant="outlined"
+                      fullWidth
+                      value={selectedPhysician.addresses[0].fax_number}
+                      onChange={(e) => setValues({ ...values, physician_fax: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} lg={6}>
+                    <FormLabel>Address</FormLabel>
+                    <TextField
+                      id="physician_address"
+                      size="small"
+                      variant="outlined"
+                      fullWidth
+                      value={selectedPhysician.addresses[0].address_1}
+                      onChange={(e) => setValues({ ...values, physician_address: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} lg={6}>
+                    <FormLabel>Address 2</FormLabel>
+                    <TextField
+                      id="physician_address2"
+                      size="small"
+                      variant="outlined"
+                      fullWidth
+                      value={selectedPhysician.addresses[0].address_2}
+                      onChange={(e) => setValues({ ...values, physician_address2: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} lg={4}>
+                    <FormLabel>City</FormLabel>
+                    <TextField
+                      id="physician_city"
+                      size="small"
+                      variant="outlined"
+                      fullWidth
+                      required
+                      value={selectedPhysician.addresses[0].city}
+                      onChange={(e) => setValues({ ...values, physician_city: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} lg={4}>
+                    <FormLabel>State</FormLabel>
+                    <CustomSelect
+                      id="physician_state"
+                      value={selectedPhysician.addresses[0].state}
+                      onChange={handleChange3}
+                      fullWidth
+                      required
+                      size="small"
+                      variant="outlined"
+                    >
+                      {states.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </CustomSelect>
+                  </Grid>
+                  <Grid item xs={12} lg={4}>
+                    <FormLabel>Zip Code</FormLabel>
+                    <TextField
+                      id="physician_zipcode"
+                      size="small"
+                      variant="outlined"
+                      fullWidth
+                      value={selectedPhysician.addresses[0].postal_code}
+                      onChange={(e) => setValues({ ...values, physician_zipcode: e.target.value })}
+                    />
                   </Grid>
                 </Grid>
-              </>
             )}
           </Box>
         );
@@ -609,6 +775,30 @@ const RequestWizard = () => {
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
+                  <FormLabel>Email</FormLabel>
+                  <TextField
+                    id="email"
+                    type="email"
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    value={values.email}
+                    onChange={(e) => setValues({ ...values, email: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={12} lg={6}>
+                  <FormLabel>Phone</FormLabel>
+                  <TextField
+                    id="phone"
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    required
+                    value={values.phone}
+                    onChange={(e) => setValues({ ...values, phone: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={12} lg={6}>
                   <FormLabel>Date of Birth</FormLabel>
                   <TextField
                     id="dob"
@@ -640,30 +830,7 @@ const RequestWizard = () => {
                   ))}
                 </CustomSelect>
                 </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Phone</FormLabel>
-                  <TextField
-                    id="phone"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={values.phone}
-                    onChange={(e) => setValues({ ...values, phone: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Email</FormLabel>
-                  <TextField
-                    id="email"
-                    type="email"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.email}
-                    onChange={(e) => setValues({ ...values, email: e.target.value })}
-                  />
-                </Grid>
+                
                 <Grid item xs={12} lg={6}>
                   <FormLabel>Address</FormLabel>
                   <TextField
@@ -729,14 +896,7 @@ const RequestWizard = () => {
                     onChange={(e) => setValues({ ...values, zipcode: e.target.value })}
                   />
                 </Grid>
-              </Grid>  
-          </Box>
-        );
 
-      case 3:
-        return (
-          <Box>
-            <Grid spacing={3} container>
                 <Grid item xs={12} lg={12}>
                   <Typography variant="h6" fontWeight="500" noWrap>
                     Additional Info
@@ -801,23 +961,29 @@ const RequestWizard = () => {
                     onChange={(e) => setValues({ ...values, notes: e.target.value })}
                   />
                 </Grid>
-              </Grid>
+              </Grid>  
           </Box>
         );
 
-      case 4:
+      case 3:
         return (
           <Box pt={3}>
-            <Typography variant="h5">Terms and condition</Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Sard about this site or you have been to it, but you cannot figure out what it is or
-              what it can do. MTA web directory isSard about this site or you have been to it, but
-              you cannot figure out what it is or what it can do. MTA web directory is
-            </Typography>
-            <FormControlLabel
-              control={<CustomCheckbox defaultChecked />}
-              label="Agree with terms?"
-            />
+            <Grid spacing={3} container>
+              <Grid item xs={12} lg={12}>
+                <Typography variant="h6" fontWeight="500">Terms and Conditions</Typography>
+              </Grid>
+              <Grid item xs={12} lg={12}>
+                <Typography variant="primary" sx={{ mt: 1 }}>
+                  By clicking “Finish” below, I hereby provide my express written consent authorizing AskYoutPrimary.com <u>to run a health insurance eligibility check and to request a prescription from my treating healthcare professional for the medicine or device I specificied</u>. I further am providing such consent for AskYoutPrimary.com to contact me at the telephone number I entered above concerning my request, including text messages and telephone calls from humans. I understand that I am not required to provide my consent as a condition to purchase any products or services and that this offer does not qualify me for any prize or reward. Message and data rates may apply. Message frequency varies. Click <a href="#">HERE</a> for our Privacy Policy. Click <a href="#">HERE</a> for our Terms and Conditions.
+                </Typography>
+              </Grid>  
+              <Grid item xs={12} lg={12}>
+               <FormControlLabel
+                  control={<CustomCheckbox />}
+                  label="Agree with terms?"
+                />
+              </Grid>
+            </Grid>     
           </Box>
         );
       default:
@@ -830,10 +996,50 @@ const RequestWizard = () => {
   };
 
   return (
-    <PageContainer>
-      <Breadcrumb title="Request Wizard" description="this is Request Wizard page" />
-      <ParentCard title='Request Wizard'>
-        <Box width="100%">
+    <PageContainer title="Request Wizard" description="this is Request Wizard page">
+      {/* ------------------------------------------- */}
+      {/* Disabled - Breadcrumb and left menu - V1.0 */}
+      {/* <Breadcrumb title="Request Wizard" description="this is Request Wizard page" />
+      <ParentCard title='Request Wizard'> */}
+      {/* ------------------------------------------- */}
+      {/* ------------------------------------------- */}
+      {/* Replace - Box - V1.0 */}
+      {/* <Box width="100%"> */}
+      {/* ------------------------------------------- */}
+        <Box
+        sx={{
+          position: 'relative',
+          '&:before': {
+            content: '""',
+            background: 'radial-gradient(#d2f1df, #d3d7fa, #bad8f4)',
+            backgroundSize: '400% 400%',
+            animation: 'gradient 15s ease infinite',
+            position: 'absolute',
+            height: '100%',
+            width: '100%',
+            opacity: '0.3',
+          },
+        }}
+      >
+      {/* ------------------------------------------- */}
+      {/* Added - Grid and Card - V1.0 */}
+          <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
+          <Grid
+            item
+            xs={12}
+            sm={12}
+            lg={12}
+            xl={12}
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Card elevation={9} sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '90%' }}>
+              <Box display="flex" alignItems="center" justifyContent="center">
+                <Logo />
+              </Box>
+              {/* End Added */}
+              {/* ------------------------------------------- */}  
           <Stepper activeStep={activeStep}>
             {steps.map((label, index) => {
               const stepProps = {};
@@ -891,8 +1097,17 @@ const RequestWizard = () => {
               </Box>
             </>
           )}
+        {/* Added - Grid and Card Closing - V1.0 */}
+          </Card>
+          </Grid>
+        </Grid>
+        {/* End Added */}
+        {/* ------------------------------------------- */}  
         </Box>
-      </ParentCard>
+      {/* ------------------------------------------- */}
+      {/* Disabled - left menu - V1.0 */}  
+      {/* </ParentCard> */}
+      {/* ------------------------------------------- */}
     </PageContainer>
   );
 };

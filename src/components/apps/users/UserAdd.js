@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -14,7 +15,7 @@ import {
 } from '@mui/material';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import { useSelector, useDispatch } from 'react-redux';
-import { addPatient } from '../../../store/apps/patients/PatientSlice';
+import { addUser } from '../../../store/apps/users/UserSlice';
 import user1 from '../../../assets/images/profile/user-1.jpg';
 
 const genders = [
@@ -87,14 +88,15 @@ const states = [
 
 
 
-const PatientAdd = () => {
+const UserAdd = () => {
   const dispatch = useDispatch();
-  const id = useSelector((state) => state.patientsReducer.patients.length + 1);
+  const id = useSelector((state) => state.usersReducer.users.length + 1);
   const [modal, setModal] = React.useState(false);
   const [state, setState] = React.useState('');
 
   const toggle = () => {
     setModal(!modal);
+
   };
 
   const [values, setValues] = React.useState({
@@ -124,7 +126,7 @@ const PatientAdd = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     dispatch(
-      addPatient(
+      addUser(
         id,
         values.firstname,
         values.middlename,
@@ -161,11 +163,14 @@ const PatientAdd = () => {
     setValues({ ...values, state: event.target.value });
   };
 
+  // Build the URL to be encoded; replace pharmacyDetail.id in the URL
+      const urlNew = ``; 
+
   return (
     <>
       <Box p={3} pb={1}>
-        <Button color="primary" variant="contained" fullWidth onClick={toggle}>
-          Add New Patient
+        <Button color="primary" variant="contained" fullWidth component={Link} to={`/auth/register`}>
+          Add New User
         </Button>
       </Box>
       <Dialog
@@ -176,7 +181,7 @@ const PatientAdd = () => {
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title" variant="h5">
-          {'Add New Patient'}
+          {'Add New User'}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
@@ -187,7 +192,7 @@ const PatientAdd = () => {
               <Grid spacing={3} container>
               <Grid item xs={12} lg={12}>
                   <Typography variant="h6" fontWeight="500" noWrap>
-                    Patient Info
+                    User Info
                   </Typography>
                 </Grid>
                 <Grid item xs={12} lg={4}>
@@ -441,4 +446,4 @@ const PatientAdd = () => {
   );
 };
 
-export default PatientAdd;
+export default UserAdd;

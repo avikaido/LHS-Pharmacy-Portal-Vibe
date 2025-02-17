@@ -25,7 +25,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Spanish'],
     frequentlycontacted: true,
     starred: true,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 2,
@@ -46,7 +47,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: false,
     starred: false,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 3,
@@ -67,7 +69,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'French'],
     frequentlycontacted: true,
     starred: false,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 4,
@@ -88,7 +91,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: false,
     starred: true,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 5,
@@ -109,7 +113,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'German'],
     frequentlycontacted: false,
     starred: false,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 6,
@@ -130,7 +135,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: true,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 7,
@@ -151,7 +157,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Spanish'],
     frequentlycontacted: false,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 8,
@@ -172,7 +179,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: true,
     starred: true,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 9,
@@ -193,7 +201,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'French'],
     frequentlycontacted: false,
     starred: true,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 10,
@@ -214,7 +223,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'German'],
     frequentlycontacted: false,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 11,
@@ -235,7 +245,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: false,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
     {
     id: 12,
@@ -256,7 +267,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Spanish'],
     frequentlycontacted: true,
     starred: false,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 13,
@@ -277,7 +289,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Korean'],
     frequentlycontacted: true,
     starred: true,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 14,
@@ -298,7 +311,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Spanish'],
     frequentlycontacted: true,
     starred: true,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 15,
@@ -319,7 +333,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: false,
     starred: true,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 16,
@@ -340,7 +355,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'French'],
     frequentlycontacted: false,
     starred: false,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 17,
@@ -361,7 +377,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: true,
     starred: true,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 18,
@@ -382,7 +399,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Spanish'],
     frequentlycontacted: true,
     starred: true,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 19,
@@ -403,7 +421,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: false,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 20,
@@ -424,7 +443,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'French'],
     frequentlycontacted: false,
     starred: true,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 21,
@@ -445,7 +465,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: true,
     starred: false,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 22,
@@ -466,7 +487,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Spanish'],
     frequentlycontacted: true,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 23,
@@ -487,7 +509,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Portuguese'],
     frequentlycontacted: true,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
     {
     id: 24,
@@ -508,7 +531,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: false,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 25,
@@ -529,7 +553,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Spanish'],
     frequentlycontacted: true,
     starred: true,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 26,
@@ -550,7 +575,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: false,
     starred: false,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   },
   {
     id: 27,
@@ -571,7 +597,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'German'],
     frequentlycontacted: false,
     starred: true,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 28,
@@ -592,7 +619,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: true,
     starred: true,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 29,
@@ -613,7 +641,8 @@ export const PharmacistList = [
     languagesSpoken: ['English', 'Spanish'],
     frequentlycontacted: false,
     starred: false,
-    deleted: false
+    deleted: false,
+    pharmacies: [201, 202],
   },
   {
     id: 30,
@@ -634,7 +663,8 @@ export const PharmacistList = [
     languagesSpoken: ['English'],
     frequentlycontacted: false,
     starred: true,
-    deleted: true
+    deleted: true,
+    pharmacies: [201, 202],
   }
 ];
 mock.onGet('/api/data/pharmacists/PharmacistsData').reply(() => {

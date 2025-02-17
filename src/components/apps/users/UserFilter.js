@@ -8,14 +8,14 @@ import {
   ListItemIcon,
   Typography,
 } from '@mui/material';
-import { setVisibilityFilter } from '../../../store/apps/pharmacists/PharmacistSlice';
+import { setVisibilityFilter } from '../../../store/apps/users/UserSlice';
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
 import { IconMail, IconSend, IconBucket, IconFolder } from '@tabler/icons';
-import PharmacistAdd from './PharmacistAdd';
+import UserAdd from './UserAdd';
 
-const PharmacistFilter = () => {
+const UserFilter = () => {
   const dispatch = useDispatch();
-  const active = useSelector((state) => state.pharmacistsReducer.currentFilter);
+  const active = useSelector((state) => state.usersReducer.currentFilter);
   const customizer = useSelector((state) => state.customizer);
   const br = `${customizer.borderRadius}px`;
 
@@ -29,13 +29,13 @@ const PharmacistFilter = () => {
     {
       id: 3,
       name: 'Frequent',
-      sort: 'frequent_pharmacist',
+      sort: 'frequent_user',
       icon: IconSend,
     },
     {
       id: 4,
       name: 'Starred',
-      sort: 'starred_pharmacist',
+      sort: 'starred_user',
       icon: IconBucket,
     },
     {
@@ -44,34 +44,27 @@ const PharmacistFilter = () => {
     },
     {
       id: 5,
-      filterbyTitle: 'Department',
+      filterbyTitle: 'User Type',
     },
 
     {
       id: 7,
-      name: 'Retail Pharmacy',
-      sort: 'retail_pharmacy',
+      name: 'New',
+      sort: 'new_user',
       icon: IconFolder,
       color: 'primary.main',
     },
     {
       id: 8,
-      name: 'Compounding Pharmacy',
-      sort: 'compounding_pharmacy',
+      name: 'Repeat',
+      sort: 'repeat_user',
       icon: IconFolder,
       color: 'error.main',
     },
     {
       id: 9,
-      name: 'Clinical Pharmacy',
-      sort: 'clinical_pharmacy',
-      icon: IconFolder,
-      color: 'success.main',
-    },
-    {
-      id: 10,
-      name: 'Hospital Pharmacy',
-      sort: 'hospital_pharmacy',
+      name: 'Older',
+      sort: 'older_user',
       icon: IconFolder,
       color: 'success.main',
     },
@@ -79,7 +72,7 @@ const PharmacistFilter = () => {
 
   return (
     <>
-      <PharmacistAdd />
+      <UserAdd />
       <List>
         <Scrollbar sx={{ height: { lg: 'calc(100vh - 100px)', md: '100vh' }, maxHeight: '800px' }}>
           {filterData.map((filter) => {
@@ -120,4 +113,4 @@ const PharmacistFilter = () => {
   );
 };
 
-export default PharmacistFilter;
+export default UserFilter;

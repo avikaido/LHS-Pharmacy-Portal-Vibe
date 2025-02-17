@@ -20,6 +20,7 @@ const Email = Loadable(lazy(() => import('../views/apps/email/Email')));
 // const BlogDetail = Loadable(lazy(() => import('../views/apps/blog/BlogPost')));
 const Tickets = Loadable(lazy(() => import('../views/apps/tickets/Tickets')));
 const Items = Loadable(lazy(() => import('../views/apps/items/Items')));
+const Users = Loadable(lazy(() => import('../views/apps/users/Users')));
 const Patients = Loadable(lazy(() => import('../views/apps/patients/Patients')));
 const Pharmacies = Loadable(lazy(() => import('../views/apps/pharmacies/Pharmacies')));
 const Pharmacists = Loadable(lazy(() => import('../views/apps/pharmacists/Pharmacists')));
@@ -169,6 +170,7 @@ const Router = [
       { path: '/apps/email', element: <Email /> },
       { path: '/apps/tickets', element: <Tickets /> },
       { path: '/apps/items', element: <Items /> },
+      { path: '/apps/users', element: <Users /> },
       { path: '/apps/patients', element: <Patients /> },
       { path: '/apps/pharmacies', element: <Pharmacies /> },
       { path: '/apps/pharmacists', element: <Pharmacists /> },
@@ -183,7 +185,11 @@ const Router = [
       { path: '/apps/invoice/create', element: <InvoiceCreate /> },
       { path: '/apps/invoice/detail/:id', element: <InvoiceDetail /> },
       { path: '/apps/invoice/edit/:id', element: <InvoiceEdit /> },
-      { path: '/apps/request/list', element: <RequestList /> },
+      // Removed - Requests - V1.0
+      //{ path: '/apps/request/list', element: <RequestList /> },
+      // Added - Requests - V1.0
+      { path: '/apps/requests', element: <RequestList /> },
+      // End Added
       { path: '/apps/request/create', element: <RequestCreate /> },
       { path: '/apps/request/detail/:id', element: <RequestDetail /> },
       { path: '/apps/request/edit/:id', element: <RequestEdit /> },
@@ -194,7 +200,11 @@ const Router = [
       { path: '/pages/casl', element: <RollbaseCASL /> },
       { path: '/pages/treeview', element: <Treeview /> },
       { path: '/pages/pricing', element: <Pricing /> },
-      { path: '/pages/account-settings', element: <AccountSetting /> },
+      // Removed - Requests - V1.0
+      //{ path: '/pages/account-settings', element: <AccountSetting /> },
+      // Added - Requests - V1.0
+      { path: '/apps/account-settings', element: <AccountSetting /> },
+      // End Added
       { path: '/pages/faq', element: <Faq /> },
       { path: '/forms/form-elements/autocomplete', element: <MuiAutoComplete /> },
       { path: '/forms/form-elements/button', element: <MuiButton /> },
@@ -211,7 +221,6 @@ const Router = [
       { path: '/forms/form-vertical', element: <FormVertical /> },
       { path: '/forms/form-custom', element: <FormCustom /> },
       { path: '/forms/form-wizard', element: <FormWizard /> },
-      { path: '/forms/request-wizard', element: <RequestWizard /> },
       { path: '/forms/form-validation', element: <FormValidation /> },
       { path: '/tables/basic', element: <BasicTable /> },
       { path: '/tables/collapsible', element: <CollapsibleTable /> },
@@ -261,15 +270,18 @@ const Router = [
     path: '/',
     element: <BlankLayout />,
     children: [
+      // Added - Requests - V1.0
+      { path: '/request-wizard', element: <RequestWizard /> },
+      // End Added
       { path: '/auth/404', element: <Error /> },
-      { path: '/auth/login', element: <Login /> },
-      { path: '/auth/login2', element: <Login2 /> },
-      { path: '/auth/register', element: <Register /> },
-      { path: '/auth/register2', element: <Register2 /> },
-      { path: '/auth/forgot-password', element: <ForgotPassword /> },
-      { path: '/auth/forgot-password2', element: <ForgotPassword2 /> },
-      { path: '/auth/two-steps', element: <TwoSteps /> },
-      { path: '/auth/two-steps2', element: <TwoSteps2 /> },
+      { path: '/auth/login2', element: <Login /> },
+      { path: '/auth/login', element: <Login2 /> },
+      { path: '/auth/register2', element: <Register /> },
+      { path: '/auth/register', element: <Register2 /> },
+      { path: '/auth/forgot-password2', element: <ForgotPassword /> },
+      { path: '/auth/forgot-password', element: <ForgotPassword2 /> },
+      { path: '/auth/two-steps2', element: <TwoSteps /> },
+      { path: '/auth/two-steps', element: <TwoSteps2 /> },
       { path: '/auth/maintenance', element: <Maintenance /> },
       { path: '/landingpage', element: <Landingpage /> },
       { path: '/frontend-pages/homepage', element: <Homepage /> },

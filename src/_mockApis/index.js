@@ -4,6 +4,7 @@ import './chat/Chatdata';
 import './email/EmailData';
 import './ticket/TicketData';
 import './item/ItemData';
+import './users/UsersData';
 import './patients/PatientsData';
 import './pharmacies/PharmaciesData';
 import './pharmacists/PharmacistsData';

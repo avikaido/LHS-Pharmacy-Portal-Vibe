@@ -153,6 +153,29 @@ return (
           <form onSubmit={handleSubmit}>
             <Grid spacing={3} container>
               <Grid item xs={12} lg={6}>
+                <FormLabel>First Name</FormLabel>
+                <TextField
+                  id="firstname"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.firstname}
+                  onChange={(e) => setValues({ ...values, firstname: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Last Name</FormLabel>
+                <TextField
+                  id="lastname"
+                  required
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.lastname}
+                  onChange={(e) => setValues({ ...values, lastname: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
                 <FormLabel>Phone</FormLabel>
                 <TextField
                   id="phone"
@@ -176,8 +199,20 @@ return (
                   onChange={(e) => setValues({ ...values, email: e.target.value })}
                 />
               </Grid>
+              <Grid item xs={12} lg={12}>
+                <FormLabel>Address</FormLabel>
+                <TextField
+                  id="address"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.address}
+                  onChange={(e) => setValues({ ...values, address: e.target.value })}
+                />
+              </Grid>
               <Grid item xs={12} lg={6}>
-                <FormLabel>DEANumber</FormLabel>
+                <FormLabel>DEA Number</FormLabel>
                 <TextField
                   id="deanumber"
                   size="small"
@@ -186,28 +221,6 @@ return (
                   required
                   value={values.deanumber}
                   onChange={(e) => setValues({ ...values, deanumber: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={6}>
-                <FormLabel>License Number</FormLabel>
-                <TextField
-                  id="licensenumber"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  value={values.licensenumber}
-                  onChange={(e) => setValues({ ...values, licensenumber: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={6}>
-                <FormLabel>License Expiration</FormLabel>
-                <TextField
-                  id="licenseexpiration"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  value={values.licenseexpiration}
-                  onChange={(e) => setValues({ ...values, licenseexpiration: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12} lg={6}>
@@ -222,6 +235,54 @@ return (
                 />
               </Grid>
               <Grid item xs={12} lg={6}>
+                <FormLabel>License Number</FormLabel>
+                <TextField
+                  id="licensenumber"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.licensenumber}
+                  onChange={(e) => setValues({ ...values, licensenumber: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                  <FormLabel>License Expiration</FormLabel>
+                  <TextField
+                    id="licenseexpiration"
+                    type="date"
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    value={values.licenseexpiration}
+                    onChange={(e) => setValues({ ...values, licenseexpiration: e.target.value })}
+                  />
+                </Grid>
+
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Department</FormLabel>
+                <TextField
+                  id="department"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.department}
+                  onChange={(e) => setValues({ ...values, department: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Years of Experience</FormLabel>
+                <TextField
+                  id="yearsOfExperience"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  value={values.yearsOfExperience}
+                  onChange={(e) => setValues({ ...values, yearsOfExperience: e.target.value })}
+                />
+              </Grid>
+              
+              <Grid item xs={12} lg={12}>
                 <FormLabel>Languages Spoken</FormLabel>
                 <TextField
                   id="languagesspoken"
@@ -232,71 +293,8 @@ return (
                   onChange={(e) => setValues({ ...values, languagesspoken: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12} lg={12}>
-                <FormLabel>Address</FormLabel>
-                <TextField
-                  id="address"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  value={values.address}
-                  onChange={(e) => setValues({ ...values, address: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={12}>
-                <FormLabel>Address 2</FormLabel>
-                <TextField
-                  id="address2"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  value={values.address2}
-                  onChange={(e) => setValues({ ...values, address2: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={4}>
-                <FormLabel>City</FormLabel>
-                <TextField
-                  id="city"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  value={values.city}
-                  onChange={(e) => setValues({ ...values, city: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={4}>
-                <FormLabel>State</FormLabel>
-                <CustomSelect
-                  id="state"
-                  value={values.state}
-                  onChange={handleChange3}
-                  fullWidth
-                  required
-                  size="small"
-                  variant="outlined"
-                >
-                  {states.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </CustomSelect>
-              </Grid>
-              <Grid item xs={12} lg={4}>
-                <FormLabel>Zip Code</FormLabel>
-                <TextField
-                  id="zipcode"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  value={values.zipcode}
-                  onChange={(e) => setValues({ ...values, zipcode: e.target.value })}
-                />
-              </Grid>
+              
+              
               <Grid item xs={12} lg={12}>
                 <FormLabel>Notes</FormLabel>
                 <TextField
@@ -323,10 +321,7 @@ return (
                     values.licensenumber.length === 0 ||
                     values.licenseexpiration.length === 0 ||
                     values.npinumber.length === 0 ||
-                    values.address.length === 0 ||
-                    values.city.length === 0 ||
-                    values.state.length === 0 ||
-                    values.zipcode.length === 0
+                    values.address.length === 0 
                   }
                 >
                   Submit

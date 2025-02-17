@@ -37,27 +37,35 @@ const PharmacistList = ({ showrightSidebar }) => {
           (c) => !c.deleted && c.starred && c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
         );
 
-      case 'engineering_department':
+      case 'retail_pharmacy':
         return pharmacists.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Engineering' &&
+            c.department === 'Retail Pharmacy' &&
             c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
         );
 
-      case 'support_department':
+      case 'compounding_pharmacy':
         return pharmacists.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Support' &&
+            c.department === 'Compounding Pharmacy' &&
             c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
         );
 
-      case 'sales_department':
+      case 'clinical_pharmacy':
         return pharmacists.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Sales' &&
+            c.department === 'Clinical Pharmacy' &&
+            c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
+        );
+
+      case 'hospital_pharmacy':
+        return pharmacists.filter(
+          (c) =>
+            !c.deleted &&
+            c.department === 'Hospital Pharmacy' &&
             c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
         );
 

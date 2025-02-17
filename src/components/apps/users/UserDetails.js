@@ -22,10 +22,10 @@ import {
 } from '@mui/material';
 import {
   isEdit,
-  UpdatePatient,
-  DeletePatient,
-  toggleStarredPatient,
-} from 'src/store/apps/patients/PatientSlice';
+  UpdateUser,
+  DeleteUser,
+  toggleStarredUser,
+} from 'src/store/apps/users/UserSlice';
 
 import BlankCard from '../../shared/BlankCard';
 import { IconPencil, IconStar, IconTrash, IconDeviceFloppy } from '@tabler/icons';
@@ -33,32 +33,32 @@ import Scrollbar from 'src/components/custom-scroll/Scrollbar';
 import emailIcon from 'src/assets/images/breadcrumb/emailSv.png';
 import { format, isValid, parseISO } from 'date-fns';
 
-const PatientDetails = () => {
-  const patientDetail = useSelector(
-    (state) => state.patientsReducer.patients[state.patientsReducer.patientContent - 1],
+const UserDetails = () => {
+  const userDetail = useSelector(
+    (state) => state.usersReducer.users[state.usersReducer.userContent - 1],
   );
-  const editPatient = useSelector((state) => state.patientsReducer.editPatient);
+  const editUser = useSelector((state) => state.usersReducer.editUser);
   const dispatch = useDispatch();
 
   const tableData = [
-    { id: 1, title: 'First Name', alias: 'firstname', gdata: patientDetail?.firstname || '', type: 'text' },
-    { id: 2, title: 'Middle Initial', alias: 'middleInitial', gdata: patientDetail?.middleInitial || '', type: 'text' },
-    { id: 3, title: 'Last Name', alias: 'lastname', gdata: patientDetail?.lastname || '', type: 'text' },
-    { id: 4, title: 'Date of Birth', alias: 'dob', gdata: patientDetail?.dob || '', type: 'text' },
-    { id: 5, title: 'Gender', alias: 'gender', gdata: patientDetail?.gender || '', type: 'text' },
-    { id: 6, title: 'Email', alias: 'email', gdata: patientDetail?.email || '', type: 'email' },
-    { id: 7, title: 'Phone', alias: 'phone', gdata: patientDetail?.phone || '', type: 'phone' },
-    { id: 8, title: 'Address', alias: 'address', gdata: patientDetail?.address || '', type: 'text' },
-    { id: 9, title: 'Address Line 2', alias: 'address2', gdata: patientDetail?.address2 || '', type: 'text' },
-    { id: 10, title: 'City', alias: 'city', gdata: patientDetail?.city || '', type: 'text' },
-    { id: 11, title: 'State', alias: 'state', gdata: patientDetail?.state || '', type: 'text' },
-    { id: 12, title: 'Zip Code', alias: 'zipcode', gdata: patientDetail?.zipcode || '', type: 'text' },
-    { id: 13, title: 'Primary Insurance', alias: 'insurance1', gdata: patientDetail?.insurance1 || '', type: 'text' },
-    { id: 14, title: 'Primary Insurance Member ID', alias: 'insurance1id', gdata: patientDetail?.insurance1id || '', type: 'text' },
-    { id: 15, title: 'Secondary Insurance', alias: 'insurance2', gdata: patientDetail?.insurance2 || '', type: 'text' },
-    { id: 16, title: 'Secondary Insurance Member ID', alias: 'insurance2id', gdata: patientDetail?.insurance2id || '', type: 'text' },
-    { id: 17, title: 'Notes', alias: 'notes', gdata: patientDetail?.notes || '', type: 'text' },
-    { id: 18, title: 'Requests', alias: 'requests', gdata: patientDetail?.requests.join(', ') || '', type: 'text' },
+    { id: 1, title: 'First Name', alias: 'firstname', gdata: userDetail?.firstname || '', type: 'text' },
+    { id: 2, title: 'Middle Initial', alias: 'middleInitial', gdata: userDetail?.middleInitial || '', type: 'text' },
+    { id: 3, title: 'Last Name', alias: 'lastname', gdata: userDetail?.lastname || '', type: 'text' },
+    { id: 4, title: 'Date of Birth', alias: 'dob', gdata: userDetail?.dob || '', type: 'text' },
+    { id: 5, title: 'Gender', alias: 'gender', gdata: userDetail?.gender || '', type: 'text' },
+    { id: 6, title: 'Email', alias: 'email', gdata: userDetail?.email || '', type: 'email' },
+    { id: 7, title: 'Phone', alias: 'phone', gdata: userDetail?.phone || '', type: 'phone' },
+    { id: 8, title: 'Address', alias: 'address', gdata: userDetail?.address || '', type: 'text' },
+    { id: 9, title: 'Address Line 2', alias: 'address2', gdata: userDetail?.address2 || '', type: 'text' },
+    { id: 10, title: 'City', alias: 'city', gdata: userDetail?.city || '', type: 'text' },
+    { id: 11, title: 'State', alias: 'state', gdata: userDetail?.state || '', type: 'text' },
+    { id: 12, title: 'Zip Code', alias: 'zipcode', gdata: userDetail?.zipcode || '', type: 'text' },
+    { id: 13, title: 'Primary Insurance', alias: 'insurance1', gdata: userDetail?.insurance1 || '', type: 'text' },
+    { id: 14, title: 'Primary Insurance Member ID', alias: 'insurance1id', gdata: userDetail?.insurance1id || '', type: 'text' },
+    { id: 15, title: 'Secondary Insurance', alias: 'insurance2', gdata: userDetail?.insurance2 || '', type: 'text' },
+    { id: 16, title: 'Secondary Insurance Member ID', alias: 'insurance2id', gdata: userDetail?.insurance2id || '', type: 'text' },
+    { id: 17, title: 'Notes', alias: 'notes', gdata: userDetail?.notes || '', type: 'text' },
+    { id: 18, title: 'Requests', alias: 'requests', gdata: userDetail?.requests.join(', ') || '', type: 'text' },
   ];
 
   const requestsTableData = [
@@ -91,34 +91,34 @@ const orderDate = requestsTableData.orderDate
   return (
     <>
       {/* ------------------------------------------- */}
-      {/* Patient Detail Part */}
+      {/* User Detail Part */}
       {/* ------------------------------------------- */}
-      {patientDetail && !patientDetail.deleted ? (
+      {userDetail && !userDetail.deleted ? (
         <>
           {/* ------------------------------------------- */}
           {/* Header Part */}
           {/* ------------------------------------------- */}
           <Box p={3} py={2} display={'flex'} alignItems="center">
-            <Typography variant="h5">Patient Details</Typography>
+            <Typography variant="h5">User Details</Typography>
             <Stack gap={0} direction="row" ml={'auto'}>
               {/* ------------------------------------------- */}
               {/* Disabled - Favorites - V1.0 */}
-              {/* <Tooltip title={patientDetail.starred ? 'Unstar' : 'Star'}>
-                <IconButton onClick={() => dispatch(toggleStarredPatient(patientDetail.id))}>
+              {/* <Tooltip title={userDetail.starred ? 'Unstar' : 'Star'}>
+                <IconButton onClick={() => dispatch(toggleStarredUser(userDetail.id))}>
                   <IconStar
                     stroke={1.3}
                     size="18"
                     style={{
-                      fill: patientDetail.starred ? '#FFC107' : '',
-                      stroke: patientDetail.starred ? '#FFC107' : '',
+                      fill: userDetail.starred ? '#FFC107' : '',
+                      stroke: userDetail.starred ? '#FFC107' : '',
                     }}
                   />
                 </IconButton>
               </Tooltip>*/}
               {/* ------------------------------------------- */}
-              <Tooltip title={editPatient ? 'Save' : 'Edit'}>
+              <Tooltip title={editUser ? 'Save' : 'Edit'}>
                 <IconButton onClick={() => dispatch(isEdit())}>
-                  {!editPatient ? (
+                  {!editUser ? (
                     <IconPencil size="18" stroke={1.3} />
                   ) : (
                     <IconDeviceFloppy size="18" stroke={1.3} />
@@ -134,10 +134,10 @@ const orderDate = requestsTableData.orderDate
           </Box>
           <Divider />
           {/* ------------------------------------------- */}
-          {/* Patient Table Part */}
+          {/* User Table Part */}
           {/* ------------------------------------------- */}
           <Box sx={{ overflow: 'auto' }}>
-            {!editPatient ? (
+            {!editUser ? (
               <Box>
                 <Box p={3}>
                   <Box display="flex" alignItems="center">
@@ -151,13 +151,13 @@ const orderDate = requestsTableData.orderDate
                     {/* ------------------------------------------- */}
                     <Box sx={{ ml: 2 }}>
                       <Typography variant="h6" mb={0.5}>
-                        {patientDetail.firstname} {patientDetail.middleInitial} {patientDetail.lastname}
+                        {userDetail.firstname} {userDetail.middleInitial} {userDetail.lastname}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" mb={0.5}>
-                        {patientDetail.dob}
+                        {userDetail.dob}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" mb={0.5}>
-                        {patientDetail.gender}
+                        {userDetail.gender}
                       </Typography>
                     </Box>
                   </Box>
@@ -167,7 +167,7 @@ const orderDate = requestsTableData.orderDate
                         Phone Number
                       </Typography>
                       <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {patientDetail.phone}
+                        {userDetail.phone}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -175,7 +175,7 @@ const orderDate = requestsTableData.orderDate
                         Email Address
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.email}
+                        {userDetail.email}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -183,7 +183,7 @@ const orderDate = requestsTableData.orderDate
                         Address
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.address}
+                        {userDetail.address}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -191,7 +191,7 @@ const orderDate = requestsTableData.orderDate
                         Address 2
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.address2}
+                        {userDetail.address2}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -199,7 +199,7 @@ const orderDate = requestsTableData.orderDate
                         City
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.city}
+                        {userDetail.city}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -207,7 +207,7 @@ const orderDate = requestsTableData.orderDate
                         State
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.state}
+                        {userDetail.state}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -215,7 +215,7 @@ const orderDate = requestsTableData.orderDate
                         Zipcode
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.zipcode}
+                        {userDetail.zipcode}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -223,7 +223,7 @@ const orderDate = requestsTableData.orderDate
                         Primary Insurance
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.insurance1}
+                        {userDetail.insurance1}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -231,7 +231,7 @@ const orderDate = requestsTableData.orderDate
                         Primary Insurance Member ID
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.insurance1id}
+                        {userDetail.insurance1id}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -239,7 +239,7 @@ const orderDate = requestsTableData.orderDate
                         Secondary Insurance
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.insurance2}
+                        {userDetail.insurance2}
                       </Typography>
                     </Grid>
                     <Grid item lg={6} xs={12} mt={4}>
@@ -247,7 +247,7 @@ const orderDate = requestsTableData.orderDate
                         Secondary Insurance Member ID
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.insurance2id}
+                        {userDetail.insurance2id}
                       </Typography>
                     </Grid>
                     <Grid item lg={12} xs={12} mt={4}>
@@ -255,7 +255,7 @@ const orderDate = requestsTableData.orderDate
                         Notes
                       </Typography>
                       <Typography variant="subtitle1" fontWeight={600} mb={0.5}>
-                        {patientDetail.notes}
+                        {userDetail.notes}
                       </Typography>
                     </Grid>
                     <Grid item lg={12} xs={12} mt={4}>
@@ -351,7 +351,7 @@ const orderDate = requestsTableData.orderDate
                     color="error"
                     variant="contained"
                     size="small"
-                    onClick={() => dispatch(DeletePatient(patientDetail.id))}
+                    onClick={() => dispatch(DeleteUser(userDetail.id))}
                   >
                     Delete
                   </Button>
@@ -374,7 +374,7 @@ const orderDate = requestsTableData.orderDate
                             type={data.type}
                             value={data.gdata}
                             onChange={(e) =>
-                              dispatch(UpdatePatient(patientDetail.id, data.alias, e.target.value))
+                              dispatch(UpdateUser(userDetail.id, data.alias, e.target.value))
                             }
                           />
                         </Box>
@@ -385,7 +385,7 @@ const orderDate = requestsTableData.orderDate
                           variant="contained"
                           onClick={() => dispatch(isEdit())}
                         >
-                          Save Patient
+                          Save User
                         </Button>
                       </Box>
                     </Box>
@@ -398,10 +398,10 @@ const orderDate = requestsTableData.orderDate
       ) : (
         <Box p={3} height="50vh" display={'flex'} justifyContent="center" alignItems={'center'}>
           {/* ------------------------------------------- */}
-          {/* If no Patient  */}
+          {/* If no User  */}
           {/* ------------------------------------------- */}
           <Box>
-            <Typography variant="h4">Please Select a Patient</Typography>
+            <Typography variant="h4">Please Select a User</Typography>
             <br />
             <img src={emailIcon} alt="Email Icon" width={'250px'} />
           </Box>
@@ -411,4 +411,4 @@ const orderDate = requestsTableData.orderDate
   );
 };
 
-export default PatientDetails;
+export default UserDetails;

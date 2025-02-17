@@ -11,8 +11,8 @@ import {
 
 import { IconStar, IconTrash } from '@tabler/icons';
 
-const PatientListItem = ({
-  onPatientClick,
+const UserListItem = ({
+  onUserClick,
   onStarredClick,
   onDeleteClick,
   id,
@@ -26,7 +26,7 @@ const PatientListItem = ({
   active,
 }) => {
   return (
-    <ListItemButton sx={{ mb: 1 }} selected={active} onClick={onPatientClick}>
+    <ListItemButton sx={{ mb: 1 }} selected={active} onClick={onUserClick}>
       {/* ------------------------------------------- */}
       {/* Disabled - Avatars - V1.0 */}
       {/* <ListItemAvatar>
@@ -72,4 +72,4 @@ const PatientListItem = ({
   );
 };
 
-export default PatientListItem;
+export default UserListItem;
