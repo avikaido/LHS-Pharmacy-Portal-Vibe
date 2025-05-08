@@ -1,1 +1,0 @@
-import{r as o,j as t}from"./index-1d78c4ac.js";import{R as s}from"./Quill-accb0170.js";import{P as i}from"./Grid-ba112631.js";const x=()=>{const[e,r]=o.useState("");return t.jsx(i,{variant:"outlined",children:t.jsx(s,{value:e,onChange:a=>{r(a)},placeholder:"Type here..."})})};export{x as Q};

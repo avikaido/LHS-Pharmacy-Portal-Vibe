@@ -7,12 +7,19 @@ node_modules/
 # Testing
 coverage/
 .nyc_output/
+__tests__/
+test/
+tests/
+*.test.js
+*.spec.js
 
 # Production
 build/
 dist/
 out/
 .next/
+.cache/
+storybook-static/
 
 # Environment files
 .env
@@ -21,6 +28,7 @@ out/
 .env.test.local
 .env.production.local
 .env*.local
+*.env
 
 # Debug logs
 npm-debug.log*
@@ -37,6 +45,10 @@ logs/
 .DS_Store
 *.sublime-workspace
 *.sublime-project
+.project
+.classpath
+.settings/
+*.sublime-*
 
 # Optional npm cache directory
 .npm
@@ -52,9 +64,16 @@ logs/
 
 # Yarn Integrity file
 .yarn-integrity
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
 # TypeScript cache
 *.tsbuildinfo
+.tscache/
 
 # Optional stylelint cache
 .stylelintcache
@@ -64,10 +83,13 @@ tmp/
 temp/
 .tmp/
 .temp/
+*.tmp
+*.temp
 
 # System Files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Project specific
 backend/.env
@@ -75,3 +97,32 @@ backend/tmp/
 backend/logs/
 backend/uploads/
 backend/node_modules/
+backend/dist/
+backend/build/
+backend/.cache/
+
+# Build artifacts
+*.min.js
+*.min.css
+*.bundle.js
+*.chunk.js
+*.map
+
+# Package manager locks (uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Misc
+.cursor/
+.vercel
+.netlify
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.yarn-integrity
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
