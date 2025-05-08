@@ -110,7 +110,7 @@ const PharmacyDetails = () => {
   }, [pharmacyDetail, editPharmacy]);
 
   // Build the URL to be encoded; replace pharmacyDetail.id in the URL
-      const urlQR = `/request-wizard?pharmacyID=${pharmacyDetail.id}`;
+      //const urlQR = `/request-wizard?pharmacyID=${pharmacyDetail.id}`;
 
   // Build the URL to be encoded; replace pharmacyDetail.id in the URL
       const urlReq = `/apps/request/detail/`;    
@@ -347,7 +347,7 @@ const PharmacyDetails = () => {
                           <img id="qr-code" ref={qrCodeRef} alt="QR Code" />
                           <Typography variant="subtitle1">Download QR Code</Typography>
                           <Typography variant="subtitle1">
-                            <Link to={urlQR}>
+                            <Link to={urlReq}>
                               Download Link
                             </Link>
                           </Typography>

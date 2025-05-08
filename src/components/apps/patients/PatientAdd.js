@@ -1,4 +1,5 @@
-import React from 'react';
+//import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -14,8 +15,13 @@ import {
 } from '@mui/material';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import { useSelector, useDispatch } from 'react-redux';
-import { addPatient } from '../../../store/apps/patients/PatientSlice';
-import user1 from '../../../assets/images/profile/user-1.jpg';
+import { createPatient, fetchPatients } from '../../../store/apps/patients/PatientSlice';
+//import user1 from '../../../assets/images/profile/user-1.jpg';
+import axios from '../../../utils/axios';
+import { useFormik } from 'formik';
+import { styled } from '@mui/material/styles';
+import * as yup from 'yup';
+
 
 const genders = [
   {
@@ -86,21 +92,42 @@ const states = [
 ];
 
 
+const validationSchema = yup.object({
+  first_name: yup.string().required('First name is required'),
+  last_name: yup.string().required('Last name is required'),
+  email: yup
+    .string()
+    .email('Enter a valid email')
+    .required('Email is required'),
+  dob: yup.string().required('Date of Birth is required'),
+  // Add other fields similarly...
+});
+
+const CustomTextField = styled((props) => <TextField {...props} />)(({ theme }) => ({
+  '& .MuiOutlinedInput-input::-webkit-input-placeholder': {
+    color: theme.palette.text.secondary,
+    opacity: '0.8',
+  },
+}));
+
+const CustomFormLabel = styled((props) => (
+  <Typography variant="subtitle1" fontWeight={600} {...props} component="label" />
+))(() => ({
+  marginBottom: '5px',
+  marginTop: '25px',
+  display: 'block',
+}));
 
 const PatientAdd = () => {
   const dispatch = useDispatch();
-  const id = useSelector((state) => state.patientsReducer.patients.length + 1);
-  const [modal, setModal] = React.useState(false);
-  const [state, setState] = React.useState('');
+  const [modal, setModal] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  const toggle = () => {
-    setModal(!modal);
-  };
-
-  const [values, setValues] = React.useState({
-    firstname: '',
-    middlename: '',
-    lastname: '',
+  const [values, setValues] = useState({
+    first_name: '',
+    middle_initial: '',
+    last_name: '',
     dob: '',
     gender: '',
     phone: '',
@@ -110,55 +137,104 @@ const PatientAdd = () => {
     city: '',
     state: '',
     zipcode: '',
-    ecname: '',
-    ecrelation: '',
-    ecphone: '',
     notes: '',
-    requests: [],
     insurance1: '',
+    insurance1_id: '',
     insurance2: '',
-    insurance1id: '',
-    insurance2id: '',
+    insurance2_id: '',
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    dispatch(
-      addPatient(
-        id,
-        values.firstname,
-        values.middlename,
-        values.lastname,
-        user1,
-        values.dob,
-        values.gender,
-        values.phone,
-        values.email,
-        values.address,
-        values.address2,
-        values.city,
-        values.state,
-        values.zipcode,
-        values.ecname,
-        values.ecrelation,
-        values.ecphone,
-        values.notes,
-        values.requests,
-        values.insurance1,
-        values.insurance2,
-        values.insurance1id,
-        values.insurance2id,
-      ),
-    );
+  const toggle = () => {
     setModal(!modal);
+    setError(null);
+    setSuccess(null);
+    setValues({
+      first_name: '',
+      middle_initial: '',
+      last_name: '',
+      dob: '',
+      gender: '',
+      phone: '',
+      email: '',
+      address: '',
+      address2: '',
+      city: '',
+      state: '',
+      zipcode: '',
+      notes: '',
+      insurance1: '',
+      insurance1_id: '',
+      insurance2: '',
+      insurance2_id: '',
+    });
   };
 
-  const handleChange2 = (event) => {
-    setValues({ ...values, gender: event.target.value });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const result = await axios.post('/patients', values);
+      setSuccess('Patient created successfully!');
+      // Refresh the patient list immediately
+      await dispatch(fetchPatients());
+      // Close the modal after 1.5 seconds to show the success message
+      setTimeout(() => {
+        toggle();
+      }, 1500);
+    } catch (err) {
+      console.log('Full error object:', err); // Log the full error object
+
+      // Handle the error based on its structure
+      if (err.error) {
+        setError(err.error);
+      } else if (err.response?.status === 409) {
+        setError('This email address is already registered to another patient. Please use a different email.');
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to create patient. Please try again.');
+      }
+    }
   };
 
-   const handleChange3 = (event) => {
-    setValues({ ...values, state: event.target.value });
+  const handleChange = (event) => {
+    const { id, value } = event.target;
+    setValues(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
+
+  const handleGenderChange = (event) => {
+    setValues(prev => ({
+      ...prev,
+      gender: event.target.value
+    }));
+  };
+
+  const handleStateChange = (event) => {
+    setValues(prev => ({
+      ...prev,
+      state: event.target.value
+    }));
+  };
+
+  const isFormValid = () => {
+    return (
+      values.first_name &&
+      values.last_name &&
+      values.dob &&
+      values.gender &&
+      values.phone &&
+      values.email &&
+      values.address &&
+      values.city &&
+      values.state &&
+      values.zipcode
+    );
   };
 
   return (
@@ -176,57 +252,71 @@ const PatientAdd = () => {
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title" variant="h5">
-          {'Add New Patient'}
+          Add New Patient
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             Fill in all fields and click on the submit button.
           </DialogContentText>
+          {error && (
+            <Typography color="error" variant="body2" sx={{ mt: 2, mb: 2, fontWeight: 'bold' }}>
+              {error}
+            </Typography>
+          )}
+          {success && (
+            <Typography color="success" variant="body2" sx={{ mt: 2, mb: 2, fontWeight: 'bold' }}>
+              {success}
+            </Typography>
+          )}
           <Box mt={3}>
             <form onSubmit={handleSubmit}>
-              <Grid spacing={3} container>
-              <Grid item xs={12} lg={12}>
-                  <Typography variant="h6" fontWeight="500" noWrap>
+              <Grid container spacing={3}>
+                <Grid item xs={12} lg={12}>
+                  <Typography variant="h6" fontWeight="500">
                     Patient Info
                   </Typography>
                 </Grid>
+
                 <Grid item xs={12} lg={4}>
-                  <FormLabel>First Name</FormLabel>
+                  <FormLabel>First Name *</FormLabel>
                   <TextField
-                    id="firstname"
+                    id="first_name"
                     size="small"
                     variant="outlined"
                     fullWidth
                     required
-                    value={values.firstname}
-                    onChange={(e) => setValues({ ...values, firstname: e.target.value })}
+                    value={values.first_name}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={4}>
-                  <FormLabel>Middle Name or Initial</FormLabel>
+                  <FormLabel>Middle Initial</FormLabel>
                   <TextField
-                    id="middlename"
+                    id="middle_initial"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.middlename}
-                    onChange={(e) => setValues({ ...values, middlename: e.target.value })}
+                    value={values.middle_initial}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={4}>
-                  <FormLabel>Last Name</FormLabel>
+                  <FormLabel>Last Name *</FormLabel>
                   <TextField
-                    id="lastname"
+                    id="last_name"
                     size="small"
                     variant="outlined"
                     fullWidth
                     required
-                    value={values.lastname}
-                    onChange={(e) => setValues({ ...values, lastname: e.target.value })}
+                    value={values.last_name}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>Date of Birth</FormLabel>
+                  <FormLabel>Date of Birth *</FormLabel>
                   <TextField
                     id="dob"
                     type="date"
@@ -235,30 +325,35 @@ const PatientAdd = () => {
                     fullWidth
                     required
                     value={values.dob}
-                    onChange={(e) => setValues({ ...values, dob: e.target.value })}
+                    onChange={handleChange}
+                    inputProps={{
+                      max: new Date().toISOString().split('T')[0] // Set max date to today
+                    }}
+                    helperText="Date cannot be in the future"
                   />
                 </Grid>
-                <Grid item xs={12} lg={6}>
 
-              <FormLabel>Gender</FormLabel>    
-                <CustomSelect
-                  id="gender"
-                  value={values.gender}
-                  onChange={handleChange2}
-                  fullWidth
-                  required
-                  size="small"
-                  variant="outlined"
-                >
-                  {genders.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </CustomSelect>
-                </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Gender *</FormLabel>
+                  <CustomSelect
+                    id="gender"
+                    value={values.gender}
+                    onChange={handleGenderChange}
+                    fullWidth
+                    required
+                    size="small"
+                    variant="outlined"
+                  >
+                    {genders.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </CustomSelect>
+                </Grid>
+
+                <Grid item xs={12} lg={6}>
+                  <FormLabel>Phone *</FormLabel>
                   <TextField
                     id="phone"
                     size="small"
@@ -266,23 +361,26 @@ const PatientAdd = () => {
                     fullWidth
                     required
                     value={values.phone}
-                    onChange={(e) => setValues({ ...values, phone: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email *</FormLabel>
                   <TextField
                     id="email"
                     type="email"
                     size="small"
                     variant="outlined"
                     fullWidth
+                    required
                     value={values.email}
-                    onChange={(e) => setValues({ ...values, email: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Address</FormLabel>
+
+                <Grid item xs={12} lg={12}>
+                  <FormLabel>Address *</FormLabel>
                   <TextField
                     id="address"
                     size="small"
@@ -290,10 +388,11 @@ const PatientAdd = () => {
                     fullWidth
                     required
                     value={values.address}
-                    onChange={(e) => setValues({ ...values, address: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
-                <Grid item xs={12} lg={6}>
+
+                <Grid item xs={12} lg={12}>
                   <FormLabel>Address 2</FormLabel>
                   <TextField
                     id="address2"
@@ -301,11 +400,12 @@ const PatientAdd = () => {
                     variant="outlined"
                     fullWidth
                     value={values.address2}
-                    onChange={(e) => setValues({ ...values, address2: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={4}>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel>City *</FormLabel>
                   <TextField
                     id="city"
                     size="small"
@@ -313,15 +413,16 @@ const PatientAdd = () => {
                     fullWidth
                     required
                     value={values.city}
-                    onChange={(e) => setValues({ ...values, city: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={4}>
-                  <FormLabel>State</FormLabel>
+                  <FormLabel>State *</FormLabel>
                   <CustomSelect
                     id="state"
                     value={values.state}
-                    onChange={handleChange3}
+                    onChange={handleStateChange}
                     fullWidth
                     required
                     size="small"
@@ -334,8 +435,9 @@ const PatientAdd = () => {
                     ))}
                   </CustomSelect>
                 </Grid>
+
                 <Grid item xs={12} lg={4}>
-                  <FormLabel>Zip Code</FormLabel>
+                  <FormLabel>Zip Code *</FormLabel>
                   <TextField
                     id="zipcode"
                     size="small"
@@ -343,15 +445,16 @@ const PatientAdd = () => {
                     fullWidth
                     required
                     value={values.zipcode}
-                    onChange={(e) => setValues({ ...values, zipcode: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={12}>
-                  <Typography variant="h6" fontWeight="500" noWrap>
+                  <Typography variant="h6" fontWeight="500">
                     Additional Info
                   </Typography>
                 </Grid>
-                
+
                 <Grid item xs={12} lg={6}>
                   <FormLabel>Primary Insurance</FormLabel>
                   <TextField
@@ -360,20 +463,22 @@ const PatientAdd = () => {
                     variant="outlined"
                     fullWidth
                     value={values.insurance1}
-                    onChange={(e) => setValues({ ...values, insurance1: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>Primary Insurance Member ID</FormLabel>
+                  <FormLabel>Primary Insurance ID</FormLabel>
                   <TextField
-                    id="insurance1id"
+                    id="insurance1_id"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.insurance1id}
-                    onChange={(e) => setValues({ ...values, insurance1id: e.target.value })}
+                    value={values.insurance1_id}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={6}>
                   <FormLabel>Secondary Insurance</FormLabel>
                   <TextField
@@ -382,49 +487,43 @@ const PatientAdd = () => {
                     variant="outlined"
                     fullWidth
                     value={values.insurance2}
-                    onChange={(e) => setValues({ ...values, insurance2: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>Secondary Insurance Member ID</FormLabel>
+                  <FormLabel>Secondary Insurance ID</FormLabel>
                   <TextField
-                    id="insurance2id"
+                    id="insurance2_id"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.insurance2id}
-                    onChange={(e) => setValues({ ...values, insurance2id: e.target.value })}
+                    value={values.insurance2_id}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={12}>
                   <FormLabel>Notes</FormLabel>
                   <TextField
                     id="notes"
                     size="small"
                     multiline
-                    rows="4"
+                    rows={4}
                     variant="outlined"
                     fullWidth
                     value={values.notes}
-                    onChange={(e) => setValues({ ...values, notes: e.target.value })}
+                    onChange={handleChange}
                   />
                 </Grid>
+
                 <Grid item xs={12} lg={12}>
                   <Button
                     variant="contained"
                     color="primary"
                     sx={{ mr: 1 }}
                     type="submit"
-                    disabled={values.firstname.length === 0
-                    || values.lastname.length === 0
-                    || values.dob.length === 0
-                    || values.gender.length === 0
-                    || values.phone.length === 0
-                    || values.address.length === 0
-                    || values.city.length === 0
-                    || values.state.length === 0
-                    || values.zipcode.length === 0
-                  }
+                    disabled={!isFormValid()}
                   >
                     Submit
                   </Button>

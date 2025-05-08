@@ -1,0 +1,11 @@
+core:
+  admin_api_key: "08920r3802f039fu2098fhj230-93094fufj23049jf0394fj034"
+
+email_delivery:
+  service: SMTP
+  smtp:
+    host: "smtp.sendgrid.net"
+    port: 587
+    secure: false          # false for TLS, true for SSL if needed
+    user: "apikeym"
+    password: "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"  

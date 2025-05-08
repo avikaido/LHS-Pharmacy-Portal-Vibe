@@ -9,7 +9,8 @@ import { styled } from '@mui/material';
 const Logo = () => {
   const customizer = useSelector((state) => state.customizer);
   const LinkStyled = styled(Link)(() => ({
-    height: customizer.TopbarHeight,
+    //height: customizer.TopbarHeight,
+    height: '100px',
     width: customizer.isCollapse ? '40px' : '180px',
     overflow: 'hidden',
     display: 'block',

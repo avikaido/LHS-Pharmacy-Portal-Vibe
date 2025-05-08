@@ -30,7 +30,9 @@ export const PatientList = [
     deleted: false,
     requests: [101, 102],
     insurance1: 'Aetna',
-    insurance2: 'Humana'
+    insurance2: 'Humana',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 2,
@@ -56,7 +58,9 @@ export const PatientList = [
     deleted: false,
     requests: [103],
     insurance1: 'Blue Cross',
-    insurance2: 'Kaiser'
+    insurance2: 'Kaiser',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 3,
@@ -82,7 +86,9 @@ export const PatientList = [
     deleted: false,
     requests: [104, 105],
     insurance1: 'Care Plus',
-    insurance2: 'Tricare'
+    insurance2: 'Tricare',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 4,
@@ -108,7 +114,9 @@ export const PatientList = [
     deleted: true,
     requests: [106],
     insurance1: 'Medicare',
-    insurance2: 'Optimum'
+    insurance2: 'Optimum',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 5,
@@ -134,7 +142,9 @@ export const PatientList = [
     deleted: false,
     requests: [107, 108],
     insurance1: 'Anthem (BCBS)',
-    insurance2: 'Wellcare'
+    insurance2: 'Wellcare',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 6,
@@ -160,7 +170,9 @@ export const PatientList = [
     deleted: true,
     requests: [109],
     insurance1: 'Medicare (Advantage Plan)',
-    insurance2: 'AARP'
+    insurance2: 'AARP',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 7,
@@ -186,7 +198,9 @@ export const PatientList = [
     deleted: true,
     requests: [110, 111],
     insurance1: 'Emblem',
-    insurance2: 'Care Source'
+    insurance2: 'Care Source',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 8,
@@ -212,7 +226,9 @@ export const PatientList = [
     deleted: true,
     requests: [112],
     insurance1: 'Cigna',
-    insurance2: 'Freedom Health'
+    insurance2: 'Freedom Health',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 9,
@@ -238,7 +254,9 @@ export const PatientList = [
     deleted: true,
     requests: [113],
     insurance1: 'Health Net',
-    insurance2: 'United Healthcare'
+    insurance2: 'United Healthcare',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 10,
@@ -264,7 +282,9 @@ export const PatientList = [
     deleted: true,
     requests: [114, 115],
     insurance1: 'Simply',
-    insurance2: 'Other'
+    insurance2: 'Other',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 11,
@@ -290,7 +310,9 @@ export const PatientList = [
     deleted: true,
     requests: [116],
     insurance1: 'Optimum',
-    insurance2: 'Wellcare'
+    insurance2: 'Wellcare',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 12,
@@ -316,7 +338,9 @@ export const PatientList = [
     deleted: false,
     requests: [117, 118],
     insurance1: 'Aetna',
-    insurance2: 'Medicare'
+    insurance2: 'Medicare',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 13,
@@ -342,7 +366,9 @@ export const PatientList = [
     deleted: false,
     requests: [119],
     insurance1: 'Freedom Health',
-    insurance2: 'Medicare (Advantage Plan)'
+    insurance2: 'Medicare (Advantage Plan)',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 14,
@@ -368,7 +394,9 @@ export const PatientList = [
     deleted: false,
     requests: [120, 121],
     insurance1: 'Care Plus',
-    insurance2: 'Humana'
+    insurance2: 'Humana',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 15,
@@ -394,7 +422,9 @@ export const PatientList = [
     deleted: false,
     requests: [122, 123],
     insurance1: 'Cigna',
-    insurance2: 'AARP'
+    insurance2: 'AARP',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 16,
@@ -420,7 +450,9 @@ export const PatientList = [
     deleted: false,
     requests: [124],
     insurance1: 'United Healthcare',
-    insurance2: 'Kaiser'
+    insurance2: 'Kaiser',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 17,
@@ -446,7 +478,9 @@ export const PatientList = [
     deleted: false,
     requests: [125, 126],
     insurance1: 'Tricare',
-    insurance2: 'Molina'
+    insurance2: 'Molina',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 18,
@@ -472,7 +506,9 @@ export const PatientList = [
     deleted: false,
     requests: [127],
     insurance1: 'Anthem (BCBS)',
-    insurance2: 'Blue Cross'
+    insurance2: 'Blue Cross',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 19,
@@ -498,7 +534,9 @@ export const PatientList = [
     deleted: true,
     requests: [128, 129],
     insurance1: 'Care Source',
-    insurance2: 'Humana'
+    insurance2: 'Humana',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 20,
@@ -524,7 +562,9 @@ export const PatientList = [
     deleted: true,
     requests: [130],
     insurance1: 'Simply',
-    insurance2: 'Freedom Health'
+    insurance2: 'Freedom Health',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 21,
@@ -550,7 +590,9 @@ export const PatientList = [
     deleted: false,
     requests: [131, 132],
     insurance1: 'AARP',
-    insurance2: 'Cigna'
+    insurance2: 'Cigna',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 22,
@@ -576,7 +618,9 @@ export const PatientList = [
     deleted: true,
     requests: [133],
     insurance1: 'Kaiser',
-    insurance2: 'Medicare'
+    insurance2: 'Medicare',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 23,
@@ -602,7 +646,9 @@ export const PatientList = [
     deleted: true,
     requests: [134, 135],
     insurance1: 'Anthem (BCBS)',
-    insurance2: 'Care Plus'
+    insurance2: 'Care Plus',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 24,
@@ -628,7 +674,9 @@ export const PatientList = [
     deleted: true,
     requests: [136],
     insurance1: 'Medicare (Advantage Plan)',
-    insurance2: 'Blue Cross'
+    insurance2: 'Blue Cross',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 25,
@@ -654,7 +702,9 @@ export const PatientList = [
     deleted: true,
     requests: [137, 138],
     insurance1: 'Wellcare',
-    insurance2: 'Health Net'
+    insurance2: 'Health Net',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 26,
@@ -680,7 +730,9 @@ export const PatientList = [
     deleted: true,
     requests: [139],
     insurance1: 'Freedom Health',
-    insurance2: 'Humana'
+    insurance2: 'Humana',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 27,
@@ -706,7 +758,9 @@ export const PatientList = [
     deleted: false,
     requests: [140, 141],
     insurance1: 'Optimum',
-    insurance2: 'United Healthcare'
+    insurance2: 'United Healthcare',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 28,
@@ -732,7 +786,9 @@ export const PatientList = [
     deleted: false,
     requests: [142],
     insurance1: 'Simply',
-    insurance2: 'Tricare'
+    insurance2: 'Tricare',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 29,
@@ -758,7 +814,9 @@ export const PatientList = [
     deleted: false,
     requests: [143],
     insurance1: 'Emblem',
-    insurance2: 'Molina'
+    insurance2: 'Molina',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   },
   {
     id: 30,
@@ -784,7 +842,9 @@ export const PatientList = [
     deleted: true,
     requests: [144, 145],
     insurance1: 'Care Source',
-    insurance2: 'Anthem (BCBS)'
+    insurance2: 'Anthem (BCBS)',
+    insurance1id: '57588857',
+    insurance2id: '33356654'
   }
 ];
 mock.onGet('/api/data/patients/PatientsData').reply(() => {

@@ -31,7 +31,7 @@ import { fetchItems, SearchItem } from '../../store/apps/items/ItemSlice';
 import axios from 'axios';
 import Logo from 'src/layouts/full/shared/logo/Logo';
 
-const steps = ['Medicine Info', 'Physician Info', 'Patient Info', 'Finish'];
+const steps = ['Describe Condition', 'Medicine Info', 'Physician Info', 'Patient Info', 'Finish'];
 
 const genders = [
   {
@@ -142,6 +142,14 @@ const RequestWizard = () => {
   const [physicianSuggestions, setPhysicianSuggestions] = useState([]);
   const [loadingPhysician, setLoadingPhysician] = useState(false);
   const [physicianState, setPhysicianState] = useState('');
+  const [conditionDescription, setConditionDescription] = useState('');
+  const [llmResponse, setLlmResponse] = useState(null);
+  const [loadingLlm, setLoadingLlm] = useState(false);
+  const [selectedRecommendedMed, setSelectedRecommendedMed] = useState(null);
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [followUpQuestion, setFollowUpQuestion] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [userResponse, setUserResponse] = useState('');
 
   const [values, setValues] = React.useState({
     firstname: '',
@@ -188,32 +196,40 @@ const RequestWizard = () => {
   }, [searchTerm, itemsData]);
 
   useEffect(() => {
-    const fetchPhysicianSuggestions = async () => {
-      if (searchTermPhysician.length < 2) {
-        setPhysicianSuggestions([]);
-        return;
-      }
-      setLoadingPhysician(true);
-      try {
-        const response = await axios.get('/api/', {
-          params: {
-            version: '2.1',
-            last_name: searchTermPhysician,
-            state: physicianState,
-            limit: 100,
-          },
-        });
-        setPhysicianSuggestions(response.data.results || []);
-      } catch (error) {
-        console.error('Error fetching physician suggestions:', error);
-      } finally {
-        setLoadingPhysician(false);
-      }
-    };
+  const fetchPhysicianSuggestions = async () => {
+    if (searchTermPhysician.length < 2) {
+      setPhysicianSuggestions([]);
+      return;
+    }
+    
+    setLoadingPhysician(true);
 
-    const debounceFetch = setTimeout(fetchPhysicianSuggestions, 300);
-    return () => clearTimeout(debounceFetch);
-  }, [searchTermPhysician, physicianState]);
+    try {
+      const response = await axios.get('/api/nhs/', {  // Ensure it uses `/api/nhs/`
+        params: {
+          version: '2.1',
+          last_name: searchTermPhysician,
+          state: physicianState,
+          limit: 100,
+        },
+      });
+
+      if (response.data && response.data.results) {
+        setPhysicianSuggestions(response.data.results);
+      } else {
+        setPhysicianSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching physician suggestions:', error.response?.data || error.message);
+    } finally {
+      setLoadingPhysician(false);
+    }
+  };
+
+  const debounceFetch = setTimeout(fetchPhysicianSuggestions, 300);
+  return () => clearTimeout(debounceFetch);
+}, [searchTermPhysician, physicianState]);
+
 
   const handleChange2 = (event) => {
     setValues({ ...values, gender: event.target.value });
@@ -266,311 +282,305 @@ const RequestWizard = () => {
     setPhysicianSuggestions([]);
   };
 
+  const handleConditionSubmit = async () => {
+    if (!conditionDescription.trim()) {
+      return;
+    }
+
+    setLoadingLlm(true);
+    setIsAnalyzing(true);
+    try {
+      const response = await axios.post('http://localhost:5002/api/analyze-condition/analyze', {
+        condition: conditionDescription,
+        medications: itemsData.map(item => ({
+          name: item.BrandName || item.GenericName,
+          description: item.Description || ''
+        })),
+        conversationHistory: conversationHistory
+      });
+
+      const newResponse = response.data;
+      setLlmResponse(newResponse);
+      
+      // Add the new interaction to conversation history
+      setConversationHistory(prev => [...prev, {
+        user: conditionDescription,
+        assistant: newResponse
+      }]);
+
+      // If the LLM needs more information, show the follow-up question
+      if (newResponse.needsMoreInfo) {
+        setFollowUpQuestion(newResponse.followUpQuestion);
+      } else {
+        setIsAnalyzing(false);
+        handleNext();
+      }
+    } catch (error) {
+      console.error('Error analyzing condition:', error.response?.data || error.message);
+      const errorMessage = error.response?.data?.message || 
+        'Failed to analyze condition. Please try again later.';
+      alert(errorMessage);
+    } finally {
+      setLoadingLlm(false);
+    }
+  };
+
+  const handleFollowUpResponse = async () => {
+    if (!userResponse.trim()) return;
+
+    setLoadingLlm(true);
+    try {
+      const response = await axios.post('http://localhost:5002/api/analyze-condition/analyze', {
+        condition: userResponse,
+        medications: itemsData.map(item => ({
+          name: item.BrandName || item.GenericName,
+          description: item.Description || ''
+        })),
+        conversationHistory: conversationHistory
+      });
+
+      const newResponse = response.data;
+      setLlmResponse(newResponse);
+      
+      // Add the new interaction to conversation history
+      setConversationHistory(prev => [...prev, {
+        user: userResponse,
+        assistant: newResponse
+      }]);
+
+      if (newResponse.needsMoreInfo) {
+        setFollowUpQuestion(newResponse.followUpQuestion);
+      } else {
+        setIsAnalyzing(false);
+        handleNext();
+      }
+      setUserResponse(''); // Clear the response input
+    } catch (error) {
+      console.error('Error processing follow-up:', error.response?.data || error.message);
+      const errorMessage = error.response?.data?.message || 
+        'Failed to process your response. Please try again later.';
+      alert(errorMessage);
+    } finally {
+      setLoadingLlm(false);
+    }
+  };
+
+  const handleRecommendedMedClick = (medication) => {
+    setSelectedRecommendedMed(medication);
+    // Extract the generic name from the medication name (format: "brand name (generic name)")
+    const genericName = medication.name.split('(')[1]?.replace(')', '').trim();
+    setSearchTerm(genericName || medication.name);
+    
+    // Find the matching item in itemsData
+    const matchingItem = itemsData.find(item => 
+      item.GenericName === genericName || 
+      item.BrandName === medication.name.split('(')[0].trim()
+    );
+    
+    if (matchingItem) {
+      setSelectedItem(matchingItem);
+      setFilteredItems([]); // Clear the dropdown immediately
+    }
+  };
+
   const handleSteps = (step) => {
     switch (step) {
-      case 0:
+      case 0: // Describe Condition
         return (
-          
-
           <Box>
-            <Grid spacing={3} container>
-            <Grid item xs={12} lg={12}>
-            </Grid>
-              <Grid item xs={12} lg={12}>
-                  <Typography variant="primary">
-                    Request a prescription from your healthcare provider on your behalf!
+            <Typography variant="h6" gutterBottom>
+              Optional: Describe Your Condition
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              This step is optional. You can skip it if you already know which medication you need or prefer not to share your condition details.
+            </Typography>
+
+            {/* Only show initial condition input if no conversation has started */}
+            {conversationHistory.length === 0 && (
+              <>
+                <CustomFormLabel htmlFor="condition">Describe your condition or symptoms</CustomFormLabel>
+                <CustomTextField
+                  id="condition"
+                  multiline
+                  rows={4}
+                  variant="outlined"
+                  fullWidth
+                  value={conditionDescription}
+                  onChange={(e) => setConditionDescription(e.target.value)}
+                  placeholder="Please describe your condition, symptoms, and any relevant medical history..."
+                />
+                <Box mt={2} display="flex" gap={2}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleConditionSubmit}
+                    disabled={!conditionDescription.trim() || loadingLlm}
+                  >
+                    {loadingLlm ? <CircularProgress size={24} /> : 'Analyze Condition'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleNext}
+                  >
+                    Skip This Step
+                  </Button>
+                </Box>
+              </>
+            )}
+
+            {/* Show conversation history if there is any */}
+            {conversationHistory.length > 0 && (
+              <Box mt={4}>
+                <Typography variant="h6" gutterBottom>
+                  Conversation History
+                </Typography>
+                {conversationHistory.map((exchange, index) => (
+                  <Box key={index} mb={2}>
+                    <Typography variant="subtitle2" color="primary">
+                      Your description:
+                    </Typography>
+                    <Typography variant="body2" paragraph>
+                      {exchange.user}
+                    </Typography>
+                    <Typography variant="subtitle2" color="primary">
+                      Analysis:
+                    </Typography>
+                    <Typography variant="body2" paragraph>
+                      {exchange.assistant.diagnosis}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
+            {/* Show follow-up question if there is one */}
+            {followUpQuestion && (
+              <Box mt={4}>
+                <Typography variant="subtitle1" color="primary" gutterBottom>
+                  To provide better recommendations, please answer:
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  {followUpQuestion}
+                </Typography>
+                <CustomTextField
+                  multiline
+                  rows={2}
+                  variant="outlined"
+                  fullWidth
+                  value={userResponse}
+                  onChange={(e) => setUserResponse(e.target.value)}
+                  placeholder="Type your response here..."
+                />
+                <Box mt={2}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleFollowUpResponse}
+                    disabled={!userResponse.trim() || loadingLlm}
+                  >
+                    {loadingLlm ? <CircularProgress size={24} /> : 'Submit Response'}
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+        );
+
+      case 1: // Medicine Info
+        return (
+          <Box>
+            {llmResponse && (
+              <Box mb={3}>
+                <Typography variant="h6" gutterBottom>
+                  Analysis Results
+                </Typography>
+                <Card sx={{ p: 2, mb: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Your Condition:
                   </Typography>
-              </Grid>    
-              <Grid item xs={12} lg={12}>
-                  <Typography variant="primary">
-                    The following questions are required for us to send the request.
+                  <Typography variant="body1" paragraph>
+                    {llmResponse.originalCondition}
                   </Typography>
-              </Grid>
-              <Grid item xs={12} lg={12}>  
-                  <Typography variant="primary">
-                    (Don't worry, most doctors approve requests initiated through our prescription screening tool.)
+                  <Typography variant="subtitle1" gutterBottom>
+                    Potential Diagnosis:
                   </Typography>
-              </Grid>
-            </Grid>
-            
-            <Grid item xs={12} lg={12}> 
-            {/* Medicine Autosuggest Field */}
-            <CustomFormLabel htmlFor="item">Medicine or Device</CustomFormLabel>
+                  <Typography variant="body1" paragraph>
+                    {llmResponse.diagnosis}
+                  </Typography>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Recommended Medications:
+                  </Typography>
+                  <List>
+                    {llmResponse.recommendedMedications.map((med, index) => (
+                      <ListItem 
+                        key={index}
+                        button
+                        onClick={() => handleRecommendedMedClick(med)}
+                        selected={selectedRecommendedMed?.name === med.name}
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                          },
+                          '&.Mui-selected': {
+                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                          }
+                        }}
+                      >
+                        <ListItemText
+                          primary={med.name}
+                          secondary={med.reason}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                  <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
+                    Important Considerations:
+                  </Typography>
+                  <Typography variant="body1">
+                    {llmResponse.considerations}
+                  </Typography>
+                </Card>
+              </Box>
+            )}
+            <CustomFormLabel htmlFor="medicine">Search for Medicine</CustomFormLabel>
             <CustomTextField
-              id="item"
+              id="medicine"
               variant="outlined"
               fullWidth
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by generic or brand name..."
             />
-            </Grid>
-            <Grid item xs={12} lg={12}>
             {filteredItems.length > 0 && (
-              <List>
+              <List sx={{ mt: 2, maxHeight: 300, overflow: 'auto' }}>
                 {filteredItems.map((item) => (
-                  <ListItem button key={item.Id} onClick={() => handleSelectItem(item)}>
-                    <ListItemText primary={`${item.GenericName} (${item.BrandName})`} />
+                  <ListItem
+                    key={item.id}
+                    button
+                    onClick={() => handleSelectItem(item)}
+                    selected={selectedItem?.id === item.id}
+                  >
+                    <ListItemText
+                      primary={item.BrandName || item.GenericName}
+                      secondary={item.GenericName !== item.BrandName ? item.GenericName : ''}
+                    />
                   </ListItem>
                 ))}
               </List>
             )}
-            </Grid>
-            {/* Display Selected Item Details */}
-            {selectedItem && (
-              <>
-                 
-                 {/* ------------------------------------------- */}
-                    {/* Disabled - Item Unfo - V1.0 */}
-                    {/*
-
-                <Grid container>
-
-                  <Grid item xs={12} lg={12} mt={4}>
-                    <Typography variant="h6" fontWeight="500" noWrap>
-                      Item Info
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Generic Name
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.GenericName}
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Brand Name(s)
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.BrandName}
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Class
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.Class}
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Use
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.Use}
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Delivery Mechanism
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.DeliveryMechanism}
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Schedule
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.Schedule}
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Dosage
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.Dosage}
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Side Effects
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.SideEffects}
-                    </Typography>
-                  </Grid>
-                  <Grid item lg={6} xs={12} mt={4}>
-                    <Typography variant="body2" color="text.secondary">
-                      Pregnancy Category
-                    </Typography>
-                    <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                      {selectedItem.PregnancyCategory}
-                    </Typography>
-                  </Grid>
-                </Grid> */}
-                {/* ------------------------------------------- */}
-              </>
-            )}
-
-           {/* Pharmacy Info */}
-            
-            <Grid container>
-              <Grid item xs={12} lg={12} mt={4}>
-                <Typography variant="h6" fontWeight="500" noWrap>
-                  Pharmacy Info
-                </Typography>
-              </Grid>
-             </Grid> 
-              <Box mt={4} sx={{ ml: 2 }}>
-                
-                  <Typography variant="h6" mb={0.5}>
-                    {samplePharmacy.pharmacyName}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {samplePharmacy.address}
-                  </Typography>
-                
-              </Box>
-
-              {/* ------------------------------------------- */}
-                    {/* Disabled - Item Unfo - V1.0 */}
-                    {/* 
-              <Grid container>
-              <Grid item lg={6} xs={12} mt={4}>
-                <Typography variant="body2" color="text.secondary">
-                  Pharmacy Chain
-                </Typography>
-                <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                  {samplePharmacy.pharmacyChain}
-                </Typography>
-              </Grid>
-              <Grid item lg={6} xs={12} mt={4}>
-                <Typography variant="body2" color="text.secondary">
-                  Pharmacy Type
-                </Typography>
-                <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                  {samplePharmacy.pharmacyType}
-                </Typography>
-              </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Phone
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.phone}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Fax
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.fax}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Email
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.email}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Website
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.website}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Manager Name
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.managerName}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Business Hours
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.businessHours}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        License Number
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.licenseNumber}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        License Expiration
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.licenseExpiration}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        NPI Number
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.npiNumber}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Insurance Accepted
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.insuranceAccepted}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item lg={6} xs={12} mt={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Services Offered
-                      </Typography>
-                      <Typography variant="subtitle1" mb={0.5} fontWeight={600}>
-                        {samplePharmacy.servicesOffered}
-                      </Typography>
-                    </Grid>
-              </Grid>
-               */}
-                {/* ------------------------------------------- */}
           </Box>
         );
-      
-      case 1:
+
+      case 2: // Physician Info
         return (
           <Box>
-
-               
-
-            {/* New State Dropdown Field */}
-          <Grid spacing={3} container>
-
-            <Grid item xs={12} lg={12}>
-            </Grid>
-              
-            <Grid item xs={12} lg={12}>
-              <Typography variant="primary">
-                Search for your physician/provider by first selecting the state and then typing in their last name.
-              </Typography>
-            </Grid>
-            <Grid item xs={12} lg={6}>
-              <CustomFormLabel htmlFor="physician-state">State</CustomFormLabel>
+            <Grid spacing={3} container>
+              <Grid item xs={12} lg={12}>
+                <Typography variant="h6" fontWeight="500">Search for your physician/provider by first selecting the state and then typing in their last name.</Typography>
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <CustomFormLabel htmlFor="physician-state">State</CustomFormLabel>
                 <CustomSelect
                   id="physician-state"
                   fullWidth
@@ -584,8 +594,8 @@ const RequestWizard = () => {
                     </MenuItem>
                   ))}
                 </CustomSelect>
-            </Grid>
-            <Grid item xs={12} lg={6}>
+              </Grid>
+              <Grid item xs={12} lg={6}>
                 <CustomFormLabel htmlFor="physician">Physician Last Name</CustomFormLabel>
                 <CustomTextField
                   id="physician"
@@ -594,8 +604,8 @@ const RequestWizard = () => {
                   value={searchTermPhysician}
                   onChange={(e) => setSearchTermPhysician(e.target.value)}
                 />
-            </Grid>
-            <Grid item xs={12} lg={12}> 
+              </Grid>
+              <Grid item xs={12} lg={12}> 
                 {loadingPhysician && <CircularProgress />}
                 <List>
                   {physicianSuggestions.map((physician) => (
@@ -606,212 +616,93 @@ const RequestWizard = () => {
                     </ListItem>
                   ))}
                 </List>
-            </Grid> 
-          </Grid>
-            {/* Display Selected Physician Details */}
-            {selectedPhysician && (
-                <Grid spacing={3} container>
-                  <Grid item xs={12} lg={12}>
-                    <Typography variant="h6" fontWeight="500" noWrap>
-                      Physician Info
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} lg={6}>
-                    <FormLabel>First Name</FormLabel>
-                    <TextField
-                      id="physician_firstname"
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      required
-                      value={selectedPhysician.basic.first_name}
-                      onChange={(e) => setValues({ ...values, physician_firstname: e.target.value })}
-                    />
-                  </Grid>
-                  <Grid item xs={12} lg={6}>
-                      <FormLabel>Last Name</FormLabel>
-                      <TextField
-                        id="physician_lastname"
-                        size="small"
-                        variant="outlined"
-                        fullWidth
-                        required
-                        value={selectedPhysician.basic.last_name}
-                        onChange={(e) => setValues({ ...values, physician_lastname: e.target.value })}
-                      />
-                  </Grid>
-                  <Grid item xs={12} lg={6}>
-                    <FormLabel>Phone</FormLabel>
-                    <TextField
-                      id="physician_phone"
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      value={selectedPhysician.addresses[0].telephone_phone}
-                      onChange={(e) => setValues({ ...values, physician_phone: e.target.value })}
-                    />
-                  </Grid>
-                  <Grid item xs={12} lg={6}>
-                    <FormLabel>Fax</FormLabel>
-                    <TextField
-                      id="physician_fax"
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      value={selectedPhysician.addresses[0].fax_number}
-                      onChange={(e) => setValues({ ...values, physician_fax: e.target.value })}
-                    />
-                  </Grid>
-                  <Grid item xs={12} lg={6}>
-                    <FormLabel>Address</FormLabel>
-                    <TextField
-                      id="physician_address"
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      value={selectedPhysician.addresses[0].address_1}
-                      onChange={(e) => setValues({ ...values, physician_address: e.target.value })}
-                    />
-                  </Grid>
-                  <Grid item xs={12} lg={6}>
-                    <FormLabel>Address 2</FormLabel>
-                    <TextField
-                      id="physician_address2"
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      value={selectedPhysician.addresses[0].address_2}
-                      onChange={(e) => setValues({ ...values, physician_address2: e.target.value })}
-                    />
-                  </Grid>
-                  <Grid item xs={12} lg={4}>
-                    <FormLabel>City</FormLabel>
-                    <TextField
-                      id="physician_city"
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      required
-                      value={selectedPhysician.addresses[0].city}
-                      onChange={(e) => setValues({ ...values, physician_city: e.target.value })}
-                    />
-                  </Grid>
-                  <Grid item xs={12} lg={4}>
-                    <FormLabel>State</FormLabel>
-                    <CustomSelect
-                      id="physician_state"
-                      value={selectedPhysician.addresses[0].state}
-                      onChange={handleChange3}
-                      fullWidth
-                      required
-                      size="small"
-                      variant="outlined"
-                    >
-                      {states.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </CustomSelect>
-                  </Grid>
-                  <Grid item xs={12} lg={4}>
-                    <FormLabel>Zip Code</FormLabel>
-                    <TextField
-                      id="physician_zipcode"
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      value={selectedPhysician.addresses[0].postal_code}
-                      onChange={(e) => setValues({ ...values, physician_zipcode: e.target.value })}
-                    />
-                  </Grid>
-                </Grid>
-            )}
+              </Grid> 
+            </Grid>
           </Box>
         );
 
-      case 2:
+      case 3: // Patient Info
         return (
           <Box mt={3}>
             <Grid spacing={3} container>
               <Grid item xs={12} lg={12}>
-                  <Typography variant="h6" fontWeight="500" noWrap>
-                    Patient Info
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>First Name</FormLabel>
-                  <TextField
-                    id="firstname"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={values.firstname}
-                    onChange={(e) => setValues({ ...values, firstname: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>Middle Name or Initial</FormLabel>
-                  <TextField
-                    id="middlename"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.middlename}
-                    onChange={(e) => setValues({ ...values, middlename: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>Last Name</FormLabel>
-                  <TextField
-                    id="lastname"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={values.lastname}
-                    onChange={(e) => setValues({ ...values, lastname: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Email</FormLabel>
-                  <TextField
-                    id="email"
-                    type="email"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.email}
-                    onChange={(e) => setValues({ ...values, email: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Phone</FormLabel>
-                  <TextField
-                    id="phone"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={values.phone}
-                    onChange={(e) => setValues({ ...values, phone: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Date of Birth</FormLabel>
-                  <TextField
-                    id="dob"
-                    type="date"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={values.dob}
-                    onChange={(e) => setValues({ ...values, dob: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
+                <Typography variant="h6" fontWeight="500" noWrap>
+                  Patient Info
+                </Typography>
+              </Grid>
+              <Grid item xs={12} lg={4}>
+                <FormLabel>First Name</FormLabel>
+                <TextField
+                  id="firstname"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.firstname}
+                  onChange={(e) => setValues({ ...values, firstname: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={4}>
+                <FormLabel>Middle Name or Initial</FormLabel>
+                <TextField
+                  id="middlename"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.middlename}
+                  onChange={(e) => setValues({ ...values, middlename: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={4}>
+                <FormLabel>Last Name</FormLabel>
+                <TextField
+                  id="lastname"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.lastname}
+                  onChange={(e) => setValues({ ...values, lastname: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Email</FormLabel>
+                <TextField
+                  id="email"
+                  type="email"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.email}
+                  onChange={(e) => setValues({ ...values, email: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Phone</FormLabel>
+                <TextField
+                  id="phone"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.phone}
+                  onChange={(e) => setValues({ ...values, phone: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Date of Birth</FormLabel>
+                <TextField
+                  id="dob"
+                  type="date"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.dob}
+                  onChange={(e) => setValues({ ...values, dob: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
 
               <FormLabel>Gender</FormLabel>    
                 <CustomSelect
@@ -829,143 +720,143 @@ const RequestWizard = () => {
                     </MenuItem>
                   ))}
                 </CustomSelect>
-                </Grid>
-                
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Address</FormLabel>
-                  <TextField
-                    id="address"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={values.address}
-                    onChange={(e) => setValues({ ...values, address: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Address 2</FormLabel>
-                  <TextField
-                    id="address2"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.address2}
-                    onChange={(e) => setValues({ ...values, address2: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>City</FormLabel>
-                  <TextField
-                    id="city"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={values.city}
-                    onChange={(e) => setValues({ ...values, city: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>State</FormLabel>
-                  <CustomSelect
-                    id="state"
-                    value={values.state}
-                    onChange={handleChange3}
-                    fullWidth
-                    required
-                    size="small"
-                    variant="outlined"
-                  >
-                    {states.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </CustomSelect>
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                  <FormLabel>Zip Code</FormLabel>
-                  <TextField
-                    id="zipcode"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={values.zipcode}
-                    onChange={(e) => setValues({ ...values, zipcode: e.target.value })}
-                  />
-                </Grid>
+              </Grid>
+              
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Address</FormLabel>
+                <TextField
+                  id="address"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.address}
+                  onChange={(e) => setValues({ ...values, address: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Address 2</FormLabel>
+                <TextField
+                  id="address2"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.address2}
+                  onChange={(e) => setValues({ ...values, address2: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={4}>
+                <FormLabel>City</FormLabel>
+                <TextField
+                  id="city"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.city}
+                  onChange={(e) => setValues({ ...values, city: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={4}>
+                <FormLabel>State</FormLabel>
+                <CustomSelect
+                  id="state"
+                  value={values.state}
+                  onChange={handleChange3}
+                  fullWidth
+                  required
+                  size="small"
+                  variant="outlined"
+                >
+                  {states.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </CustomSelect>
+              </Grid>
+              <Grid item xs={12} lg={4}>
+                <FormLabel>Zip Code</FormLabel>
+                <TextField
+                  id="zipcode"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.zipcode}
+                  onChange={(e) => setValues({ ...values, zipcode: e.target.value })}
+                />
+              </Grid>
 
-                <Grid item xs={12} lg={12}>
-                  <Typography variant="h6" fontWeight="500" noWrap>
-                    Additional Info
-                  </Typography>
-                </Grid>
-                
-                
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Primary Insurance</FormLabel>
-                  <TextField
-                    id="insurance1"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.insurance1}
-                    onChange={(e) => setValues({ ...values, insurance1: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Primary Insurance Member ID</FormLabel>
-                  <TextField
-                    id="insurance1id"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.insurance1id}
-                    onChange={(e) => setValues({ ...values, insurance1id: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Secondary Insurance</FormLabel>
-                  <TextField
-                    id="insurance2"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.insurance2}
-                    onChange={(e) => setValues({ ...values, insurance2: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={6}>
-                  <FormLabel>Secondary Insurance Member ID</FormLabel>
-                  <TextField
-                    id="insurance2id"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.insurance2id}
-                    onChange={(e) => setValues({ ...values, insurance2id: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} lg={12}>
-                  <FormLabel>Notes</FormLabel>
-                  <TextField
-                    id="notes"
-                    size="small"
-                    multiline
-                    rows="4"
-                    variant="outlined"
-                    fullWidth
-                    value={values.notes}
-                    onChange={(e) => setValues({ ...values, notes: e.target.value })}
-                  />
-                </Grid>
-              </Grid>  
+              <Grid item xs={12} lg={12}>
+                <Typography variant="h6" fontWeight="500" noWrap>
+                  Additional Info
+                </Typography>
+              </Grid>
+              
+              
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Primary Insurance</FormLabel>
+                <TextField
+                  id="insurance1"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.insurance1}
+                  onChange={(e) => setValues({ ...values, insurance1: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Primary Insurance Member ID</FormLabel>
+                <TextField
+                  id="insurance1id"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.insurance1id}
+                  onChange={(e) => setValues({ ...values, insurance1id: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Secondary Insurance</FormLabel>
+                <TextField
+                  id="insurance2"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.insurance2}
+                  onChange={(e) => setValues({ ...values, insurance2: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={6}>
+                <FormLabel>Secondary Insurance Member ID</FormLabel>
+                <TextField
+                  id="insurance2id"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.insurance2id}
+                  onChange={(e) => setValues({ ...values, insurance2id: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} lg={12}>
+                <FormLabel>Notes</FormLabel>
+                <TextField
+                  id="notes"
+                  size="small"
+                  multiline
+                  rows="4"
+                  variant="outlined"
+                  fullWidth
+                  value={values.notes}
+                  onChange={(e) => setValues({ ...values, notes: e.target.value })}
+                />
+              </Grid>
+            </Grid>  
           </Box>
         );
 
-      case 3:
+      case 4: // Finish
         return (
           <Box pt={3}>
             <Grid spacing={3} container>
@@ -974,7 +865,7 @@ const RequestWizard = () => {
               </Grid>
               <Grid item xs={12} lg={12}>
                 <Typography variant="primary" sx={{ mt: 1 }}>
-                  By clicking “Finish” below, I hereby provide my express written consent authorizing AskYoutPrimary.com <u>to run a health insurance eligibility check and to request a prescription from my treating healthcare professional for the medicine or device I specificied</u>. I further am providing such consent for AskYoutPrimary.com to contact me at the telephone number I entered above concerning my request, including text messages and telephone calls from humans. I understand that I am not required to provide my consent as a condition to purchase any products or services and that this offer does not qualify me for any prize or reward. Message and data rates may apply. Message frequency varies. Click <a href="#">HERE</a> for our Privacy Policy. Click <a href="#">HERE</a> for our Terms and Conditions.
+                  By clicking "Finish" below, I hereby provide my express written consent authorizing AskYoutPrimary.com <u>to run a health insurance eligibility check and to request a prescription from my treating healthcare professional for the medicine or device I specificied</u>. I further am providing such consent for AskYoutPrimary.com to contact me at the telephone number I entered above concerning my request, including text messages and telephone calls from humans. I understand that I am not required to provide my consent as a condition to purchase any products or services and that this offer does not qualify me for any prize or reward. Message and data rates may apply. Message frequency varies. Click <a href="#">HERE</a> for our Privacy Policy. Click <a href="#">HERE</a> for our Terms and Conditions.
                 </Typography>
               </Grid>  
               <Grid item xs={12} lg={12}>
@@ -986,8 +877,9 @@ const RequestWizard = () => {
             </Grid>     
           </Box>
         );
+
       default:
-        break;
+        return null;
     }
   };
 
@@ -1040,11 +932,11 @@ const RequestWizard = () => {
               </Box>
               {/* End Added */}
               {/* ------------------------------------------- */}  
-          <Stepper activeStep={activeStep}>
+          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
             {steps.map((label, index) => {
               const stepProps = {};
               const labelProps = {};
-              if (isStepOptional(index)) {
+              if (index === 0) {
                 labelProps.optional = <Typography variant="caption">Optional</Typography>;
               }
               if (isStepSkipped(index)) {
@@ -1082,18 +974,23 @@ const RequestWizard = () => {
                   Back
                 </Button>
                 <Box flex="1 1 auto" />
-                {isStepOptional(activeStep) && (
-                  <Button color="inherit" onClick={handleSkip} sx={{ mr: 1 }}>
-                    Skip
+                {activeStep === 0 ? (
+                  <Button
+                    onClick={handleNext}
+                    variant="contained"
+                    color="primary"
+                  >
+                    Skip This Step
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNext}
+                    variant="contained"
+                    color={activeStep === steps.length - 1 ? 'success' : 'secondary'}
+                  >
+                    {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
                   </Button>
                 )}
-                <Button
-                  onClick={handleNext}
-                  variant="contained"
-                  color={activeStep === steps.length - 1 ? 'success' : 'secondary'}
-                >
-                  {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
-                </Button>
               </Box>
             </>
           )}

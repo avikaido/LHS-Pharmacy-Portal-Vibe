@@ -38,10 +38,18 @@ export default defineConfig({
 
   server: {
     proxy: {
-      '/api': {
+      // Route all internal API calls to your Express backend
+      '^/api/(?!nhs).*': {  // Exclude NHS API calls from going to Express
+        target: 'http://localhost:5002', // Express API backend
+        changeOrigin: true,
+        rewrite: (path) => path, // Keeps the API paths intact
+      },
+
+      // NIH API Proxy (Ensures only NIH API calls are forwarded externally)
+      '^/api/nhs/.*': {
         target: 'https://npiregistry.cms.hhs.gov',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        rewrite: (path) => path.replace(/^\/api\/nhs/, '/api'), // Ensure path matches NHS API expectations
         secure: false,
       },
     },

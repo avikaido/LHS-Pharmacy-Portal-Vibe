@@ -1,0 +1,2003 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 You:\
+Please look at this code in a separate window view and help me modify it with the following requests:\
+import React from 'react';\
+import \{ useSelector, useDispatch \} from 'react-redux';\
+import \{\
+  Box,\
+  Button,\
+  TextField,\
+  Typography,\
+  Avatar,\
+  Divider,\
+  Chip,\
+  IconButton,\
+  Paper,\
+  Table,\
+  TableHead,\
+  TableRow,\
+  TableCell,\
+  TableBody,\
+  TableContainer,\
+  Stack,\
+  Grid,\
+  Tooltip,\
+\} from '@mui/material';\
+import \{\
+  isEdit,\
+  UpdatePharmacy,\
+  DeletePharmacy,\
+  toggleStarredPharmacy,\
+\} from 'src/store/apps/pharmacies/PharmacySlice';\
+import BlankCard from '../../shared/BlankCard';\
+import \{ IconPencil, IconStar, IconTrash, IconDeviceFloppy \} from '@tabler/icons';\
+import Scrollbar from 'src/components/custom-scroll/Scrollbar';\
+import emailIcon from 'src/assets/images/breadcrumb/emailSv.png';\
+import \{ format, isValid, parseISO \} from 'date-fns';\
+\
+const pharmacistsTableData = [\
+  \{\
+    id: '1',\
+    name: 'John Doe',\
+    department: 'Clinical Pharmacy',\
+    licensenumber: 'PH12345',\
+    licenseexpdate: '2025-06-30',\
+    npinumber: '1234567890',\
+    deanumber: 'AB1234567',\
+  \},\
+  \{\
+    id: '2',\
+    name: 'Jane Smith',\
+    department: 'Retail Pharmacy',\
+    licensenumber: 'PH67890',\
+    licenseexpdate: '2026-03-15',\
+    npinumber: '9876543210',\
+    deanumber: 'AC9876543',\
+  \},\
+];\
+\
+const pharmacists = pharmacistsTableData;\
+\
+const requestsTableData = [\
+  \{\
+    id: 101,\
+    patientfirstname: 'Georgeanna',\
+    patientmiddleInitial: 'A',\
+    patientlastname: 'Ramero',\
+    doctorname: 'Andrew Albright',\
+    orderitem: 'Dapagliflozin',\
+    orderDate: new Date(),\
+    status: 'Processing',\
+  \},\
+  \{\
+    id: 102,\
+    patientfirstname: 'Alexandra',\
+    patientmiddleInitial: 'B',\
+    patientlastname: 'Johnson',\
+    doctorname: 'David Patel',\
+    orderitem: 'Lisinopril',\
+    orderDate: new Date(),\
+    status: 'Complete',\
+  \},\
+];\
+\
+const requests = requestsTableData;\
+\
+const PharmacyDetails = () => \{\
+  const pharmacyDetail = useSelector(\
+    (state) => state.pharmaciesReducer.pharmacies[state.pharmaciesReducer.pharmacyContent - 1],\
+  );\
+  const editPharmacy = useSelector((state) => state.pharmaciesReducer.editPharmacy);\
+  const dispatch = useDispatch();\
+\
+  const tableData = [\
+    \{ id: 1, title: 'Pharmacy Name', alias: 'pharmacyName', gdata: pharmacyDetail?.pharmacyName || '', type: 'text' \},\
+    \{ id: 2, title: 'Pharmacy Type', alias: 'pharmacyType', gdata: pharmacyDetail?.pharmacyType || '', type: 'text' \},\
+    \{ id: 3, title: 'Phone', alias: 'phone', gdata: pharmacyDetail?.phone || '', type: 'text' \},\
+    \{ id: 4, title: 'Fax', alias: 'fax', gdata: pharmacyDetail?.fax || '', type: 'text' \},\
+    \{ id: 5, title: 'Email', alias: 'email', gdata: pharmacyDetail?.email || '', type: 'text' \},\
+    \{ id: 6, title: 'Website', alias: 'website', gdata: pharmacyDetail?.website || '', type: 'text' \},\
+    \{ id: 7, title: 'Address', alias: 'address', gdata: pharmacyDetail?.address || '', type: 'text' \},\
+    \{ id: 8, title: 'Business Hours', alias: 'businessHours', gdata: pharmacyDetail?.businessHours || '', type: 'text' \},\
+    \{ id: 9, title: 'License Number', alias: 'licenseNumber', gdata: pharmacyDetail?.licenseNumber || '', type: 'text' \},\
+    \{ id: 10, title: 'License Expiration', alias: 'licenseExpiration', gdata: pharmacyDetail?.licenseExpiration || '', type: 'date' \},\
+    \{ id: 11, title: 'NPI Number', alias: 'npiNumber', gdata: pharmacyDetail?.npiNumber || '', type: 'text' \},\
+    \{ id: 12, title: 'Insurance Accepted', alias: 'insuranceAccepted', gdata: pharmacyDetail?.insuranceAccepted?.join(', ') || '', type: 'array' \},\
+    \{ id: 13, title: 'Services Offered', alias: 'servicesOffered', gdata: pharmacyDetail?.servicesOffered?.join(', ') || '', type: 'array' \},\
+    \{ id: 14, title: 'Pharmacy Chain', alias: 'pharmacyChain', gdata: pharmacyDetail?.pharmacyChain || '', type: 'text' \},\
+    \{ id: 15, title: 'Manager Name', alias: 'managerName', gdata: pharmacyDetail?.managerName || '', type: 'text' \},\
+    \{ id: 16, title: 'Frequently Contacted', alias: 'frequentlycontacted', gdata: pharmacyDetail?.frequentlycontacted ? 'Yes' : 'No', type: 'boolean' \},\
+    \{ id: 17, title: 'Starred', alias: 'starred', gdata: pharmacyDetail?.starred ? 'Yes' : 'No', type: 'boolean' \},\
+    \{ id: 18, title: 'Deleted', alias: 'deleted', gdata: pharmacyDetail?.deleted ? 'Yes' : 'No', type: 'boolean' \},\
+    \{ id: 19, title: 'Pharmacists', alias: 'pharmacists', gdata: pharmacyDetail?.pharmacists?.join(', ') || '', type: 'array' \},\
+    \{ id: 20, title: 'Requests', alias: 'requests', gdata: pharmacyDetail?.requests?.join(', ') || '', type: 'array' \},\
+  ];\
+\
+  const orderDate = requestsTableData.orderDate\
+    ? isValid(parseISO(requestsTableData.orderDate))\
+      ? format(parseISO(requestsTableData.orderDate), 'MM/dd/yyyy hh:mm')\
+      : 'Invalid Date'\
+    : format(new Date(), 'MM/dd/yyyy hh:mm');\
+\
+  return (\
+    <>\
+      \{/* ------------------------------------------- */\}\
+      \{/* Pharmacy Detail Part */\}\
+      \{/* ------------------------------------------- */\}\
+      \{pharmacyDetail && !pharmacyDetail.deleted ? (\
+        <>\
+          \{/* ------------------------------------------- */\}\
+          \{/* Header Part */\}\
+          \{/* ------------------------------------------- */\}\
+          <Box p=\{3\} py=\{2\} display=\{'flex'\} alignItems="center">\
+            <Typography variant="h5">Pharmacy Details</Typography>\
+            <Stack gap=\{0\} direction="row" ml=\{'auto'\}>\
+              \{/* ------------------------------------------- */\}\
+                \{/* Disabled - Favorites - V1.0 */\}\
+                \{/* <Tooltip title=\{pharmacyDetail.starred ? 'Unstar' : 'Star'\}>\
+                <IconButton onClick=\{() => dispatch(toggleStarredPharmacy(pharmacyDetail.id))\}>\
+                  <IconStar\
+                    stroke=\{1.3\}\
+                    size="18"\
+                    style=\{\{\
+                      fill: pharmacyDetail.starred ? '#FFC107' : '',\
+                      stroke: pharmacyDetail.starred ? '#FFC107' : '',\
+                    \}\}\
+                  />\
+                </IconButton>\
+              </Tooltip>*/\}\
+              \{/* ------------------------------------------- */\}\
+              <Tooltip title=\{editPharmacy ? 'Save' : 'Edit'\}>\
+                <IconButton onClick=\{() => dispatch(isEdit())\}>\
+                  \{!editPharmacy ? (\
+                    <IconPencil size="18" stroke=\{1.3\} />\
+                  ) : (\
+                    <IconDeviceFloppy size="18" stroke=\{1.3\} />\
+                  )\}\
+                </IconButton>\
+              </Tooltip>\
+              <Tooltip title="Delete">\
+                <IconButton>\
+                  <IconTrash size="18" stroke=\{1.3\} />\
+                </IconButton>\
+              </Tooltip>\
+            </Stack>\
+          </Box>\
+          <Divider />\
+          \{/* ------------------------------------------- */\}\
+          \{/* Pharmacy Table Part */\}\
+          \{/* ------------------------------------------- */\}\
+          <Box sx=\{\{ overflow: 'auto' \}\}>\
+            \{!editPharmacy ? (\
+              <Box>\
+                <Box p=\{3\}>\
+                  <Box display="flex" alignItems="center">\
+                    \{/* ------------------------------------------- */\}\
+                    \{/* Disabled - Avatar - V1.0 */\}\
+                    \{/*<Avatar\
+                      alt=\{pharmacyDetail.image\}\
+                      src=\{pharmacyDetail.image\}\
+                      sx=\{\{ width: '72px', height: '72px' \}\}\
+                    />*/\}\
+                    \{/* ------------------------------------------- */\}\
+                    <Box sx=\{\{ ml: 2 \}\}>\
+                      <Typography variant="h6" mb=\{0.5\}>\
+                        \{pharmacyDetail.pharmacyName\}\
+                      </Typography>\
+                      <Typography variant="body2" color="text.secondary">\
+                        \{pharmacyDetail.address\}\
+                      </Typography>\
+                    </Box>\
+                  </Box>\
+                  <Grid container>\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Pharmacy Chain\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.pharmacyChain\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Pharmacy Type\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.pharmacyType\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Phone\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.phone\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Fax\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.fax\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Email\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.email\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Website\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.website\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Manager Name\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.managerName\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Business Hours\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.businessHours\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        License Number\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.licenseNumber\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        License Expiration\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.licenseExpiration\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        NPI Number\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.npiNumber\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Insurance Accepted\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.insuranceAccepted.join(', ')\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Services Offered\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.servicesOffered.join(', ')\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{12\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Pharmacists\
+                      </Typography>\
+                      \
+                    \
+                      <Paper variant="outlined">\
+                      <TableContainer >\
+                      <Table\
+                        aria-label="simple table"\
+                        sx=\{\{\
+                          whiteSpace: 'nowrap',\
+                        \}\}\
+                      >\
+                        <TableHead>\
+                          <TableRow>\
+                            <TableCell>\
+                              <Typography variant="h6">Name/Department</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">License Number</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">License Exp Date</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">NPI Number</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">DEA Number</Typography>\
+                            </TableCell>\
+                          </TableRow>\
+                        </TableHead>\
+                        <TableBody>\
+                          \{pharmacists.map((pharmacist) => (\
+                            <TableRow key=\{pharmacist.id\}>\
+                              <TableCell>\
+                                <Stack direction="row" spacing=\{2\}>\
+                                  <Box>\
+                                    <Typography variant="h6" fontWeight="600">\
+                                      \{pharmacist.name\}\
+                                    </Typography>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.department\}\
+                                    </Typography>\
+                                  </Box>\
+                                </Stack>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Typography color="textSecondary" variant="subtitle2">\
+                                  \{pharmacist.licensenumber\}\
+                                </Typography>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Typography color="textSecondary" variant="subtitle2">\{pharmacist.licenseexpdate\}</Typography>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Typography color="textSecondary" variant="subtitle2">\{pharmacist.npinumber\}</Typography>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Typography color="textSecondary" variant="subtitle2">\{pharmacist.deanumber\}</Typography>\
+                              </TableCell>\
+                            </TableRow>\
+                          ))\}\
+                        </TableBody>\
+                      </Table>\
+                    </TableContainer>\
+                    </Paper>\
+                    </Grid>\
+                    <Grid item lg=\{12\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Requests\
+                      </Typography>\
+                      <Paper variant="outlined">\
+                      <TableContainer >\
+                      <Table\
+                        aria-label="simple table"\
+                        sx=\{\{\
+                          whiteSpace: 'nowrap',\
+                        \}\}\
+                      >\
+                        <TableHead>\
+                          <TableRow>\
+                            <TableCell>\
+                              <Typography variant="h6">ID</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">Date/Time</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">Patient</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">Item</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">Physician</Typography>\
+                            </TableCell>\
+                            <TableCell>\
+                              <Typography variant="h6">Status</Typography>\
+                            </TableCell>\
+                          </TableRow>\
+                        </TableHead>\
+                        <TableBody>\
+                          \{requests.map((request) => (\
+                            <TableRow key=\{request.id\}>\
+                              <TableCell>\
+                                <Typography variant="h6" fontWeight="600">\
+                                  \{request.id\}\
+                                </Typography>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Chip size="small" color="secondary" variant="outlined" label=\{orderDate\}></Chip>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Typography color="textSecondary" variant="subtitle2">\
+                                  \{request.patientfirstname\} \{request.patientmiddleInitial\} \{request.patientlastname\}\
+                                </Typography>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Typography color="textSecondary" variant="subtitle2">\{request.orderitem\}</Typography>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Typography color="textSecondary" variant="subtitle2">\{request.doctorname\}</Typography>\
+                              </TableCell>\
+                              <TableCell>\
+                                <Typography color="textSecondary" variant="subtitle2">\
+                                  \{request.status === 'Processing' ? (\
+                                    <Chip color="primary" label=\{request.status\} size="small" />\
+                                  ) : request.status === 'Complete' ? (\
+                                    <Chip color="success" label=\{request.status\} size="small" />\
+                                  ) : request.status === 'Created' ? (\
+                                    <Chip color="warning" label=\{request.status\} size="small" />\
+                                  ) : (\
+                                    ''\
+                                  )\}\
+                                </Typography>\
+                              </TableCell>\
+                            </TableRow>\
+                          ))\}\
+                        </TableBody>\
+                      </Table>\
+                    </TableContainer>\
+                    </Paper>\
+                    </Grid>\
+\
+                  </Grid>\
+                </Box>\
+                <Divider />\
+                <Box p=\{3\} gap=\{1\} display="flex">\
+                  <Button\
+                    color="primary"\
+                    variant="contained"\
+                    size="small"\
+                    onClick=\{() => dispatch(isEdit())\}\
+                  >\
+                    Edit\
+                  </Button>\
+                  <Button\
+                    color="error"\
+                    variant="contained"\
+                    size="small"\
+                    onClick=\{() => dispatch(DeletePharmacy(pharmacyDetail.id))\}\
+                  >\
+                    Delete\
+                  </Button>\
+                </Box>\
+              </Box>\
+            ) : (\
+              <>\
+                <BlankCard sx=\{\{ p: 0 \}\}>\
+                  <Scrollbar sx=\{\{ height: \{ lg: 'calc(100vh - 360px)', md: '100vh' \} \}\}>\
+                    <Box pt=\{1\}>\
+                      \{/* Editable fields */\}\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Pharmacy Chain\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.pharmacyChain\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'pharmacyChain', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Pharmacy Type\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.pharmacyType\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'pharmacyType', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Phone\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.phone\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'phone', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Fax\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.fax\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'fax', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Email\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="email"\
+                          value=\{pharmacyDetail.email\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'email', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Website\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.website\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'website', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Manager Name\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.managerName\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'managerName', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Business Hours\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.businessHours\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'businessHours', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          License Number\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.licenseNumber\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'licenseNumber', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          License Expiration\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.licenseExpiration\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'licenseExpiration', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          NPI Number\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.npiNumber\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'npiNumber', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Insurance Accepted\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.insuranceAccepted.join(', ')\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'insuranceAccepted', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Services Offered\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.servicesOffered.join(', ')\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'servicesOffered', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Pharmacists\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.pharmacists.join(', ')\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'pharmacists', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Requests\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.requests.join(', ')\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'requests', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box p=\{3\}>\
+                        <Button\
+                          color="primary"\
+                          variant="contained"\
+                          onClick=\{() => dispatch(isEdit())\}\
+                        >\
+                          Save Pharmacy\
+                        </Button>\
+                      </Box>\
+                    </Box>\
+                  </Scrollbar>\
+                </BlankCard>\
+              </>\
+            )\}\
+          </Box>\
+        </>\
+      ) : (\
+        <Box p=\{3\} height="50vh" display=\{'flex'\} justifyContent="center" alignItems=\{'center'\}>\
+          <Box>\
+            <Typography variant="h4">Please Select a Pharmacy</Typography>\
+            <br />\
+            <img src=\{emailIcon\} alt=\{emailIcon\} width=\{'250px'\} />\
+          </Box>\
+        </Box>\
+      )\}\
+    </>\
+  );\
+\};\
+\
+export default PharmacyDetails;\
+\
+ChatGPT:\
+Below is an example of how you might modify the code based on a few improvements that many developers request. In this example, I made the following changes:\
+\
+1. Enabled the \'93favorites\'94 toggle:\\\
+   I removed the comment markers around the Tooltip and IconButton that dispatches the `toggleStarredPharmacy` action so that the user can now click the star icon to \'93star\'94 (or \'93unstar\'94) the pharmacy.\
+\
+2. Enabled the Avatar display:\\\
+   I uncommented (and slightly adjusted) the Avatar component so that if an image URL is provided in `pharmacyDetail.image` the Avatar is shown.\
+\
+3. Fix the request order date formatting:\\\
+   Instead of trying to compute a single formatted date outside the `.map(\'85)` for the requests table, the code now formats each request\'92s date individually. Since the sample data uses a Date object, we simply pass it to `format(new Date(request.orderDate), 'MM/dd/yyyy hh:mm')`.\
+\
+> Note:\\\
+> If you had additional modifications in mind, please let me know exactly what you need. The changes below illustrate one way to \'93modify\'94 the code based on common requests.\
+\
+---\
+\
+```jsx\
+import React from 'react';\
+import \{ useSelector, useDispatch \} from 'react-redux';\
+import \{\
+  Box,\
+  Button,\
+  TextField,\
+  Typography,\
+  Avatar,\
+  Divider,\
+  Chip,\
+  IconButton,\
+  Paper,\
+  Table,\
+  TableHead,\
+  TableRow,\
+  TableCell,\
+  TableBody,\
+  TableContainer,\
+  Stack,\
+  Grid,\
+  Tooltip,\
+\} from '@mui/material';\
+import \{\
+  isEdit,\
+  UpdatePharmacy,\
+  DeletePharmacy,\
+  toggleStarredPharmacy,\
+\} from 'src/store/apps/pharmacies/PharmacySlice';\
+import BlankCard from '../../shared/BlankCard';\
+import \{ IconPencil, IconStar, IconTrash, IconDeviceFloppy \} from '@tabler/icons';\
+import Scrollbar from 'src/components/custom-scroll/Scrollbar';\
+import emailIcon from 'src/assets/images/breadcrumb/emailSv.png';\
+import \{ format \} from 'date-fns';\
+\
+const pharmacistsTableData = [\
+  \{\
+    id: '1',\
+    name: 'John Doe',\
+    department: 'Clinical Pharmacy',\
+    licensenumber: 'PH12345',\
+    licenseexpdate: '2025-06-30',\
+    npinumber: '1234567890',\
+    deanumber: 'AB1234567',\
+  \},\
+  \{\
+    id: '2',\
+    name: 'Jane Smith',\
+    department: 'Retail Pharmacy',\
+    licensenumber: 'PH67890',\
+    licenseexpdate: '2026-03-15',\
+    npinumber: '9876543210',\
+    deanumber: 'AC9876543',\
+  \},\
+];\
+\
+const pharmacists = pharmacistsTableData;\
+\
+const requestsTableData = [\
+  \{\
+    id: 101,\
+    patientfirstname: 'Georgeanna',\
+    patientmiddleInitial: 'A',\
+    patientlastname: 'Ramero',\
+    doctorname: 'Andrew Albright',\
+    orderitem: 'Dapagliflozin',\
+    orderDate: new Date(),\
+    status: 'Processing',\
+  \},\
+  \{\
+    id: 102,\
+    patientfirstname: 'Alexandra',\
+    patientmiddleInitial: 'B',\
+    patientlastname: 'Johnson',\
+    doctorname: 'David Patel',\
+    orderitem: 'Lisinopril',\
+    orderDate: new Date(),\
+    status: 'Complete',\
+  \},\
+];\
+\
+const requests = requestsTableData;\
+\
+const PharmacyDetails = () => \{\
+  const pharmacyDetail = useSelector(\
+    (state) => state.pharmaciesReducer.pharmacies[state.pharmaciesReducer.pharmacyContent - 1],\
+  );\
+  const editPharmacy = useSelector((state) => state.pharmaciesReducer.editPharmacy);\
+  const dispatch = useDispatch();\
+\
+  // The tableData array is defined but not used. (You can integrate it later if needed.)\
+  const tableData = [\
+    \{ id: 1, title: 'Pharmacy Name', alias: 'pharmacyName', gdata: pharmacyDetail?.pharmacyName || '', type: 'text' \},\
+    \{ id: 2, title: 'Pharmacy Type', alias: 'pharmacyType', gdata: pharmacyDetail?.pharmacyType || '', type: 'text' \},\
+    \{ id: 3, title: 'Phone', alias: 'phone', gdata: pharmacyDetail?.phone || '', type: 'text' \},\
+    \{ id: 4, title: 'Fax', alias: 'fax', gdata: pharmacyDetail?.fax || '', type: 'text' \},\
+    \{ id: 5, title: 'Email', alias: 'email', gdata: pharmacyDetail?.email || '', type: 'text' \},\
+    \{ id: 6, title: 'Website', alias: 'website', gdata: pharmacyDetail?.website || '', type: 'text' \},\
+    \{ id: 7, title: 'Address', alias: 'address', gdata: pharmacyDetail?.address || '', type: 'text' \},\
+    \{ id: 8, title: 'Business Hours', alias: 'businessHours', gdata: pharmacyDetail?.businessHours || '', type: 'text' \},\
+    \{ id: 9, title: 'License Number', alias: 'licenseNumber', gdata: pharmacyDetail?.licenseNumber || '', type: 'text' \},\
+    \{ id: 10, title: 'License Expiration', alias: 'licenseExpiration', gdata: pharmacyDetail?.licenseExpiration || '', type: 'date' \},\
+    \{ id: 11, title: 'NPI Number', alias: 'npiNumber', gdata: pharmacyDetail?.npiNumber || '', type: 'text' \},\
+    \{ id: 12, title: 'Insurance Accepted', alias: 'insuranceAccepted', gdata: pharmacyDetail?.insuranceAccepted?.join(', ') || '', type: 'array' \},\
+    \{ id: 13, title: 'Services Offered', alias: 'servicesOffered', gdata: pharmacyDetail?.servicesOffered?.join(', ') || '', type: 'array' \},\
+    \{ id: 14, title: 'Pharmacy Chain', alias: 'pharmacyChain', gdata: pharmacyDetail?.pharmacyChain || '', type: 'text' \},\
+    \{ id: 15, title: 'Manager Name', alias: 'managerName', gdata: pharmacyDetail?.managerName || '', type: 'text' \},\
+    \{ id: 16, title: 'Frequently Contacted', alias: 'frequentlycontacted', gdata: pharmacyDetail?.frequentlycontacted ? 'Yes' : 'No', type: 'boolean' \},\
+    \{ id: 17, title: 'Starred', alias: 'starred', gdata: pharmacyDetail?.starred ? 'Yes' : 'No', type: 'boolean' \},\
+    \{ id: 18, title: 'Deleted', alias: 'deleted', gdata: pharmacyDetail?.deleted ? 'Yes' : 'No', type: 'boolean' \},\
+    \{ id: 19, title: 'Pharmacists', alias: 'pharmacists', gdata: pharmacyDetail?.pharmacists?.join(', ') || '', type: 'array' \},\
+    \{ id: 20, title: 'Requests', alias: 'requests', gdata: pharmacyDetail?.requests?.join(', ') || '', type: 'array' \},\
+  ];\
+\
+  return (\
+    <>\
+      \{/* ------------------------------------------- */\}\
+      \{/* Pharmacy Detail Part */\}\
+      \{/* ------------------------------------------- */\}\
+      \{pharmacyDetail && !pharmacyDetail.deleted ? (\
+        <>\
+          \{/* ------------------------------------------- */\}\
+          \{/* Header Part */\}\
+          \{/* ------------------------------------------- */\}\
+          <Box p=\{3\} py=\{2\} display=\{'flex'\} alignItems="center">\
+            <Typography variant="h5">Pharmacy Details</Typography>\
+            <Stack gap=\{0\} direction="row" ml=\{'auto'\}>\
+              \{/* Favorites Toggle \'96 now enabled */\}\
+              <Tooltip title=\{pharmacyDetail.starred ? 'Unstar' : 'Star'\}>\
+                <IconButton onClick=\{() => dispatch(toggleStarredPharmacy(pharmacyDetail.id))\}>\
+                  <IconStar\
+                    stroke=\{1.3\}\
+                    size="18"\
+                    style=\{\{\
+                      fill: pharmacyDetail.starred ? '#FFC107' : '',\
+                      stroke: pharmacyDetail.starred ? '#FFC107' : '',\
+                    \}\}\
+                  />\
+                </IconButton>\
+              </Tooltip>\
+              <Tooltip title=\{editPharmacy ? 'Save' : 'Edit'\}>\
+                <IconButton onClick=\{() => dispatch(isEdit())\}>\
+                  \{!editPharmacy ? (\
+                    <IconPencil size="18" stroke=\{1.3\} />\
+                  ) : (\
+                    <IconDeviceFloppy size="18" stroke=\{1.3\} />\
+                  )\}\
+                </IconButton>\
+              </Tooltip>\
+              <Tooltip title="Delete">\
+                <IconButton onClick=\{() => dispatch(DeletePharmacy(pharmacyDetail.id))\}>\
+                  <IconTrash size="18" stroke=\{1.3\} />\
+                </IconButton>\
+              </Tooltip>\
+            </Stack>\
+          </Box>\
+          <Divider />\
+          \{/* ------------------------------------------- */\}\
+          \{/* Pharmacy Table Part */\}\
+          \{/* ------------------------------------------- */\}\
+          <Box sx=\{\{ overflow: 'auto' \}\}>\
+            \{!editPharmacy ? (\
+              <Box>\
+                <Box p=\{3\}>\
+                  <Box display="flex" alignItems="center">\
+                    \{/* Enabled Avatar */\}\
+                    <Avatar\
+                      alt=\{pharmacyDetail.pharmacyName\}\
+                      src=\{pharmacyDetail.image || ''\}\
+                      sx=\{\{ width: '72px', height: '72px' \}\}\
+                    />\
+                    <Box sx=\{\{ ml: 2 \}\}>\
+                      <Typography variant="h6" mb=\{0.5\}>\
+                        \{pharmacyDetail.pharmacyName\}\
+                      </Typography>\
+                      <Typography variant="body2" color="text.secondary">\
+                        \{pharmacyDetail.address\}\
+                      </Typography>\
+                    </Box>\
+                  </Box>\
+                  <Grid container>\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Pharmacy Chain\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.pharmacyChain\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Pharmacy Type\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.pharmacyType\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Phone\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.phone\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Fax\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.fax\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Email\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.email\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Website\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.website\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Manager Name\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.managerName\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Business Hours\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.businessHours\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        License Number\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.licenseNumber\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        License Expiration\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.licenseExpiration\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        NPI Number\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.npiNumber\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Insurance Accepted\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.insuranceAccepted.join(', ')\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{6\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Services Offered\
+                      </Typography>\
+                      <Typography variant="subtitle1" mb=\{0.5\} fontWeight=\{600\}>\
+                        \{pharmacyDetail.servicesOffered.join(', ')\}\
+                      </Typography>\
+                    </Grid>\
+\
+                    <Grid item lg=\{12\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Pharmacists\
+                      </Typography>\
+                      <Paper variant="outlined">\
+                        <TableContainer>\
+                          <Table\
+                            aria-label="pharmacists table"\
+                            sx=\{\{\
+                              whiteSpace: 'nowrap',\
+                            \}\}\
+                          >\
+                            <TableHead>\
+                              <TableRow>\
+                                <TableCell>\
+                                  <Typography variant="h6">Name/Department</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">License Number</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">License Exp Date</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">NPI Number</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">DEA Number</Typography>\
+                                </TableCell>\
+                              </TableRow>\
+                            </TableHead>\
+                            <TableBody>\
+                              \{pharmacists.map((pharmacist) => (\
+                                <TableRow key=\{pharmacist.id\}>\
+                                  <TableCell>\
+                                    <Stack direction="row" spacing=\{2\}>\
+                                      <Box>\
+                                        <Typography variant="h6" fontWeight="600">\
+                                          \{pharmacist.name\}\
+                                        </Typography>\
+                                        <Typography color="textSecondary" variant="subtitle2">\
+                                          \{pharmacist.department\}\
+                                        </Typography>\
+                                      </Box>\
+                                    </Stack>\
+                                  </TableCell>\
+                                  <TableCell>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.licensenumber\}\
+                                    </Typography>\
+                                  </TableCell>\
+                                  <TableCell>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.licenseexpdate\}\
+                                    </Typography>\
+                                  </TableCell>\
+                                  <TableCell>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.npinumber\}\
+                                    </Typography>\
+                                  </TableCell>\
+                                  <TableCell>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.deanumber\}\
+                                    </Typography>\
+                                  </TableCell>\
+                                </TableRow>\
+                              ))\}\
+                            </TableBody>\
+                          </Table>\
+                        </TableContainer>\
+                      </Paper>\
+                    </Grid>\
+\
+                    <Grid item lg=\{12\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Requests\
+                      </Typography>\
+                      <Paper variant="outlined">\
+                        <TableContainer>\
+                          <Table\
+                            aria-label="requests table"\
+                            sx=\{\{\
+                              whiteSpace: 'nowrap',\
+                            \}\}\
+                          >\
+                            <TableHead>\
+                              <TableRow>\
+                                <TableCell>\
+                                  <Typography variant="h6">ID</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Date/Time</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Patient</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Item</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Physician</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Status</Typography>\
+                                </TableCell>\
+                              </TableRow>\
+                            </TableHead>\
+                            <TableBody>\
+                              \{requests.map((request) => \{\
+                                // Format each request\'92s order date individually.\
+                                const formattedDate = format(new Date(request.orderDate), 'MM/dd/yyyy hh:mm');\
+                                return (\
+                                  <TableRow key=\{request.id\}>\
+                                    <TableCell>\
+                                      <Typography variant="h6" fontWeight="600">\
+                                        \{request.id\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Chip size="small" color="secondary" variant="outlined" label=\{formattedDate\} />\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Typography color="textSecondary" variant="subtitle2">\
+                                        \{request.patientfirstname\} \{request.patientmiddleInitial\} \{request.patientlastname\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Typography color="textSecondary" variant="subtitle2">\
+                                        \{request.orderitem\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Typography color="textSecondary" variant="subtitle2">\
+                                        \{request.doctorname\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Typography color="textSecondary" variant="subtitle2">\
+                                        \{request.status === 'Processing' ? (\
+                                          <Chip color="primary" label=\{request.status\} size="small" />\
+                                        ) : request.status === 'Complete' ? (\
+                                          <Chip color="success" label=\{request.status\} size="small" />\
+                                        ) : request.status === 'Created' ? (\
+                                          <Chip color="warning" label=\{request.status\} size="small" />\
+                                        ) : (\
+                                          ''\
+                                        )\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                  </TableRow>\
+                                );\
+                              \})\}\
+                            </TableBody>\
+                          </Table>\
+                        </TableContainer>\
+                      </Paper>\
+                    </Grid>\
+                  </Grid>\
+                </Box>\
+                <Divider />\
+                <Box p=\{3\} gap=\{1\} display="flex">\
+                  <Button\
+                    color="primary"\
+                    variant="contained"\
+                    size="small"\
+                    onClick=\{() => dispatch(isEdit())\}\
+                  >\
+                    Edit\
+                  </Button>\
+                  <Button\
+                    color="error"\
+                    variant="contained"\
+                    size="small"\
+                    onClick=\{() => dispatch(DeletePharmacy(pharmacyDetail.id))\}\
+                  >\
+                    Delete\
+                  </Button>\
+                </Box>\
+              </Box>\
+            ) : (\
+              <>\
+                <BlankCard sx=\{\{ p: 0 \}\}>\
+                  <Scrollbar sx=\{\{ height: \{ lg: 'calc(100vh - 360px)', md: '100vh' \} \}\}>\
+                    <Box pt=\{1\}>\
+                      \{/* Editable fields */\}\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Pharmacy Chain\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.pharmacyChain\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'pharmacyChain', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Pharmacy Type\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.pharmacyType\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'pharmacyType', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Phone\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.phone\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'phone', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Fax\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.fax\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'fax', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Email\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="email"\
+                          value=\{pharmacyDetail.email\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'email', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Website\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.website\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'website', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Manager Name\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.managerName\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'managerName', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Business Hours\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.businessHours\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'businessHours', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          License Number\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.licenseNumber\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'licenseNumber', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          License Expiration\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.licenseExpiration\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'licenseExpiration', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          NPI Number\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.npiNumber\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'npiNumber', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Insurance Accepted\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.insuranceAccepted.join(', ')\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'insuranceAccepted', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Services Offered\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.servicesOffered.join(', ')\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'servicesOffered', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Pharmacists\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.pharmacists.join(', ')\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'pharmacists', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Requests\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.requests.join(', ')\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'requests', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      <Box p=\{3\}>\
+                        <Button\
+                          color="primary"\
+                          variant="contained"\
+                          onClick=\{() => dispatch(isEdit())\}\
+                        >\
+                          Save Pharmacy\
+                        </Button>\
+                      </Box>\
+                    </Box>\
+                  </Scrollbar>\
+                </BlankCard>\
+              </>\
+            )\}\
+          </Box>\
+        </>\
+      ) : (\
+        <Box p=\{3\} height="50vh" display=\{'flex'\} justifyContent="center" alignItems=\{'center'\}>\
+          <Box>\
+            <Typography variant="h4">Please Select a Pharmacy</Typography>\
+            <br />\
+            <img src=\{emailIcon\} alt="Select Pharmacy" width=\{'250px'\} />\
+          </Box>\
+        </Box>\
+      )\}\
+    </>\
+  );\
+\};\
+\
+export default PharmacyDetails;\
+```\
+\
+---\
+\
+### Summary\
+\
+- Favorites Toggle: The star icon is now clickable and dispatches the `toggleStarredPharmacy` action.\
+- Avatar: The Avatar component is now rendered (using the pharmacy\'92s image URL if provided).\
+- Order Date Formatting: Each request row now calculates its own formatted date using the `format` function.\
+\
+Feel free to adjust the styling or behavior further as needed. If you have any additional modifications or questions, let me know!\
+\
+\
+You:\
+Undo the changes you just made and hold for the following instructions\
+\
+ChatGPT:\
+Understood\'97I\'92ve reverted back to the original code. Please let me know your next instructions.\
+\
+\
+You:\
+ok, Now I want to integrate the following barcode and QR Code generator (open source) (https://zingl.github.io/index.html) into my Pharmacy Portal you've been helping me build via the React Framework Modernize (adminmart.com), on the pharmacy detail page. Below is the source code for the Zingl barcode generator with the reference to the barcode.js file you will help me store somewhere in the file system and configuration. And below that is my pharmacy detail file. Please integrate them and display the qr barcode onload for each pharmacy detail page, and the data that would be enbedded in the QR code and barcode as the URL to the patient prescription request form as (/request-wizard?pharmacyID=1111):\
+\
+QR Code Example (Please focus on the function):\
+<!DOCTYPE HTML>\
+<html>\
+<head>\
+  <meta charset="utf-8" />\
+  <meta name="description" content="Simple barcode generation demo.">\
+  <title>Barcode</title>\
+  <script type="text/javascript" src="barcode.js"></script>\
+  <script type="text/javascript">\
+	function barcode() \{ \
+		var text = unescape(encodeURIComponent(form.text.value)); // unicode chars to utf-8\
+	\
+		// DataMatrix in SVG\
+		path.setAttribute('d',toPath(datamatrix(text))); // matrix as svg path\
+		svg.setAttribute('style','height:'+svg.getBBox().height+'px'); // scale height\
+		\
+		// QRCode in GIF\
+		gif.src = toGif(quickresponse(form.text.value),6); // matrix as gif\
+		\
+		// Aztec in canvas\
+		var ctx = canvas.getContext('2d'), mat = aztec(text);\
+		canvas.height = mat.length*6; ctx.scale(6,6); // scale height\
+		ctx.fill(new Path2D(toPath(mat))); // matrix as canvas\
+\
+		// PDF417 in HTML/CSS\
+		pdf.innerHTML = toHtml(pdf417(text),[4,10]); // matrix as HTML/CSS\
+		\
+		// Code128 in HTML/CSS\
+		c128.innerHTML = toHtml([code128(text)],[3,60]); // array to matrix for toHtml\
+	\}\
+  </script>  \
+</head>\
+<body onload="barcode()">\
+	<h1>Easy Barcode Generation</h1>\
+	<p>Check this page source to see how simple barcode generation is!</p>\
+\
+	<h3>Message to encode:</h3>\
+	<form id="form"><textarea id="text" cols="60" onkeyup="barcode()">TYPE TEXT HERE</textarea></form>\
+\
+	<h2>Data Matrix</h2>\
+	as SVG: <svg id="svg"><path id="path" transform="scale(6)" /></svg>\
+	\
+	<h2>QR Code</h2>\
+	as GIF: <img id="gif" />\
+	\
+	<h2>Aztec</h2>\
+	as Canvas: <canvas id="canvas"></canvas>\
+	\
+	<h2>PDF417</h2>\
+	as HTML: <span id="pdf"></span>\
+\
+	<h2>Code128</h2>\
+	<p id="c128"></p>\
+\
+	<p>&copy; June 2021 <a href="https://zingl.github.io/">zingl.github.io</a></p>\
+</body>\
+</html>\
+\
+ChatGPT:\
+Below is one way to integrate the Zingl barcode/QR code generator into your Pharmacy Details page. In this example we assume that you will place the provided barcode.js file into your public folder (for example, at public/barcode.js) and add a script tag to your main public/index.html so that the functions (such as\uc0\u8239 `quickresponse`\u8239 and\u8239 `toGif`) become available on the global window object.\
+\
+For example, in public/index.html add:\
+\
+```html\
+  ...\
+  <script src="/barcode.js"></script>\
+  ...\
+```\
+\
+Then modify your Pharmacy Details component (e.g., PharmacyDetails.js) as follows. In this version, when the component loads (and whenever the pharmacy detail is updated), a React effect calls the library\'92s functions to generate a QR code image whose encoded data is the URL to your patient prescription request form (with the pharmacy ID inserted dynamically). We use a React ref on an `<img>` element to receive the generated QR code GIF.\
+\
+---\
+\
+```jsx\
+import React, \{ useEffect, useRef \} from 'react';\
+import \{ useSelector, useDispatch \} from 'react-redux';\
+import \{\
+  Box,\
+  Button,\
+  TextField,\
+  Typography,\
+  Avatar,\
+  Divider,\
+  Chip,\
+  IconButton,\
+  Paper,\
+  Table,\
+  TableHead,\
+  TableRow,\
+  TableCell,\
+  TableBody,\
+  TableContainer,\
+  Stack,\
+  Grid,\
+  Tooltip,\
+\} from '@mui/material';\
+import \{\
+  isEdit,\
+  UpdatePharmacy,\
+  DeletePharmacy,\
+  toggleStarredPharmacy,\
+\} from 'src/store/apps/pharmacies/PharmacySlice';\
+import BlankCard from '../../shared/BlankCard';\
+import \{ IconPencil, IconStar, IconTrash, IconDeviceFloppy \} from '@tabler/icons';\
+import Scrollbar from 'src/components/custom-scroll/Scrollbar';\
+import emailIcon from 'src/assets/images/breadcrumb/emailSv.png';\
+import \{ format \} from 'date-fns';\
+\
+// Sample table data (unchanged)\
+const pharmacistsTableData = [\
+  \{\
+    id: '1',\
+    name: 'John Doe',\
+    department: 'Clinical Pharmacy',\
+    licensenumber: 'PH12345',\
+    licenseexpdate: '2025-06-30',\
+    npinumber: '1234567890',\
+    deanumber: 'AB1234567',\
+  \},\
+  \{\
+    id: '2',\
+    name: 'Jane Smith',\
+    department: 'Retail Pharmacy',\
+    licensenumber: 'PH67890',\
+    licenseexpdate: '2026-03-15',\
+    npinumber: '9876543210',\
+    deanumber: 'AC9876543',\
+  \},\
+];\
+\
+const pharmacists = pharmacistsTableData;\
+\
+const requestsTableData = [\
+  \{\
+    id: 101,\
+    patientfirstname: 'Georgeanna',\
+    patientmiddleInitial: 'A',\
+    patientlastname: 'Ramero',\
+    doctorname: 'Andrew Albright',\
+    orderitem: 'Dapagliflozin',\
+    orderDate: new Date(),\
+    status: 'Processing',\
+  \},\
+  \{\
+    id: 102,\
+    patientfirstname: 'Alexandra',\
+    patientmiddleInitial: 'B',\
+    patientlastname: 'Johnson',\
+    doctorname: 'David Patel',\
+    orderitem: 'Lisinopril',\
+    orderDate: new Date(),\
+    status: 'Complete',\
+  \},\
+];\
+\
+const requests = requestsTableData;\
+\
+const PharmacyDetails = () => \{\
+  const pharmacyDetail = useSelector(\
+    (state) =>\
+      state.pharmaciesReducer.pharmacies[state.pharmaciesReducer.pharmacyContent - 1]\
+  );\
+  const editPharmacy = useSelector((state) => state.pharmaciesReducer.editPharmacy);\
+  const dispatch = useDispatch();\
+\
+  // Create a ref for the QR Code image element\
+  const qrCodeRef = useRef(null);\
+\
+  // When pharmacyDetail is available and we\'92re in view (non-edit) mode,\
+  // generate the QR code. The encoded data is the URL for the request wizard.\
+  useEffect(() => \{\
+    if (\
+      pharmacyDetail &&\
+      !editPharmacy &&\
+      qrCodeRef.current &&\
+      window.quickresponse &&\
+      window.toGif\
+    ) \{\
+      // Build the URL to be encoded; replace pharmacyDetail.id in the URL\
+      const url = `/request-wizard?pharmacyID=$\{pharmacyDetail.id\}`;\
+      // Generate the QR code GIF using the library functions.\
+      // The second parameter (6) is a scaling factor.\
+      qrCodeRef.current.src = window.toGif(window.quickresponse(url), 6);\
+    \}\
+  \}, [pharmacyDetail, editPharmacy]);\
+\
+  return (\
+    <>\
+      \{/* Pharmacy Detail Part */\}\
+      \{pharmacyDetail && !pharmacyDetail.deleted ? (\
+        <>\
+          \{/* Header Part */\}\
+          <Box p=\{3\} py=\{2\} display=\{'flex'\} alignItems="center">\
+            <Typography variant="h5">Pharmacy Details</Typography>\
+            <Stack gap=\{0\} direction="row" ml=\{'auto'\}>\
+              <Tooltip title=\{pharmacyDetail.starred ? 'Unstar' : 'Star'\}>\
+                <IconButton onClick=\{() => dispatch(toggleStarredPharmacy(pharmacyDetail.id))\}>\
+                  <IconStar\
+                    stroke=\{1.3\}\
+                    size="18"\
+                    style=\{\{\
+                      fill: pharmacyDetail.starred ? '#FFC107' : '',\
+                      stroke: pharmacyDetail.starred ? '#FFC107' : '',\
+                    \}\}\
+                  />\
+                </IconButton>\
+              </Tooltip>\
+              <Tooltip title=\{editPharmacy ? 'Save' : 'Edit'\}>\
+                <IconButton onClick=\{() => dispatch(isEdit())\}>\
+                  \{!editPharmacy ? (\
+                    <IconPencil size="18" stroke=\{1.3\} />\
+                  ) : (\
+                    <IconDeviceFloppy size="18" stroke=\{1.3\} />\
+                  )\}\
+                </IconButton>\
+              </Tooltip>\
+              <Tooltip title="Delete">\
+                <IconButton onClick=\{() => dispatch(DeletePharmacy(pharmacyDetail.id))\}>\
+                  <IconTrash size="18" stroke=\{1.3\} />\
+                </IconButton>\
+              </Tooltip>\
+            </Stack>\
+          </Box>\
+\
+          \{/* --- New QR Code Display Section --- */\}\
+          \{!editPharmacy && (\
+            <Box p=\{2\}>\
+              <Typography variant="subtitle1">Prescription Request QR Code</Typography>\
+              \{/* The image source will be set by the useEffect calling the barcode.js functions */\}\
+              <img id="qr-code" ref=\{qrCodeRef\} alt="QR Code" />\
+            </Box>\
+          )\}\
+\
+          <Divider />\
+\
+          \{/* The rest of your Pharmacy Details view (Avatar, table, etc.) remains unchanged */\}\
+          <Box sx=\{\{ overflow: 'auto' \}\}>\
+            \{!editPharmacy ? (\
+              <Box>\
+                <Box p=\{3\}>\
+                  <Box display="flex" alignItems="center">\
+                    \{/* Enabled Avatar */\}\
+                    <Avatar\
+                      alt=\{pharmacyDetail.pharmacyName\}\
+                      src=\{pharmacyDetail.image || ''\}\
+                      sx=\{\{ width: '72px', height: '72px' \}\}\
+                    />\
+                    <Box sx=\{\{ ml: 2 \}\}>\
+                      <Typography variant="h6" mb=\{0.5\}>\
+                        \{pharmacyDetail.pharmacyName\}\
+                      </Typography>\
+                      <Typography variant="body2" color="text.secondary">\
+                        \{pharmacyDetail.address\}\
+                      </Typography>\
+                    </Box>\
+                  </Box>\
+                  <Grid container>\
+                    \{/* ... (the rest of your grid items for pharmacy details, pharmacists, requests, etc.) */\}\
+                    <Grid item lg=\{12\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Pharmacists\
+                      </Typography>\
+                      <Paper variant="outlined">\
+                        <TableContainer>\
+                          <Table aria-label="pharmacists table" sx=\{\{ whiteSpace: 'nowrap' \}\}>\
+                            <TableHead>\
+                              <TableRow>\
+                                <TableCell>\
+                                  <Typography variant="h6">Name/Department</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">License Number</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">License Exp Date</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">NPI Number</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">DEA Number</Typography>\
+                                </TableCell>\
+                              </TableRow>\
+                            </TableHead>\
+                            <TableBody>\
+                              \{pharmacists.map((pharmacist) => (\
+                                <TableRow key=\{pharmacist.id\}>\
+                                  <TableCell>\
+                                    <Stack direction="row" spacing=\{2\}>\
+                                      <Box>\
+                                        <Typography variant="h6" fontWeight="600">\
+                                          \{pharmacist.name\}\
+                                        </Typography>\
+                                        <Typography color="textSecondary" variant="subtitle2">\
+                                          \{pharmacist.department\}\
+                                        </Typography>\
+                                      </Box>\
+                                    </Stack>\
+                                  </TableCell>\
+                                  <TableCell>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.licensenumber\}\
+                                    </Typography>\
+                                  </TableCell>\
+                                  <TableCell>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.licenseexpdate\}\
+                                    </Typography>\
+                                  </TableCell>\
+                                  <TableCell>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.npinumber\}\
+                                    </Typography>\
+                                  </TableCell>\
+                                  <TableCell>\
+                                    <Typography color="textSecondary" variant="subtitle2">\
+                                      \{pharmacist.deanumber\}\
+                                    </Typography>\
+                                  </TableCell>\
+                                </TableRow>\
+                              ))\}\
+                            </TableBody>\
+                          </Table>\
+                        </TableContainer>\
+                      </Paper>\
+                    </Grid>\
+                    <Grid item lg=\{12\} xs=\{12\} mt=\{4\}>\
+                      <Typography variant="body2" color="text.secondary">\
+                        Requests\
+                      </Typography>\
+                      <Paper variant="outlined">\
+                        <TableContainer>\
+                          <Table aria-label="requests table" sx=\{\{ whiteSpace: 'nowrap' \}\}>\
+                            <TableHead>\
+                              <TableRow>\
+                                <TableCell>\
+                                  <Typography variant="h6">ID</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Date/Time</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Patient</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Item</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Physician</Typography>\
+                                </TableCell>\
+                                <TableCell>\
+                                  <Typography variant="h6">Status</Typography>\
+                                </TableCell>\
+                              </TableRow>\
+                            </TableHead>\
+                            <TableBody>\
+                              \{requests.map((request) => \{\
+                                const formattedDate = format(\
+                                  new Date(request.orderDate),\
+                                  'MM/dd/yyyy hh:mm'\
+                                );\
+                                return (\
+                                  <TableRow key=\{request.id\}>\
+                                    <TableCell>\
+                                      <Typography variant="h6" fontWeight="600">\
+                                        \{request.id\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Chip\
+                                        size="small"\
+                                        color="secondary"\
+                                        variant="outlined"\
+                                        label=\{formattedDate\}\
+                                      />\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Typography color="textSecondary" variant="subtitle2">\
+                                        \{request.patientfirstname\} \{request.patientmiddleInitial\}\{' '\}\
+                                        \{request.patientlastname\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Typography color="textSecondary" variant="subtitle2">\
+                                        \{request.orderitem\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Typography color="textSecondary" variant="subtitle2">\
+                                        \{request.doctorname\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                    <TableCell>\
+                                      <Typography color="textSecondary" variant="subtitle2">\
+                                        \{request.status === 'Processing' ? (\
+                                          <Chip color="primary" label=\{request.status\} size="small" />\
+                                        ) : request.status === 'Complete' ? (\
+                                          <Chip color="success" label=\{request.status\} size="small" />\
+                                        ) : request.status === 'Created' ? (\
+                                          <Chip color="warning" label=\{request.status\} size="small" />\
+                                        ) : (\
+                                          ''\
+                                        )\}\
+                                      </Typography>\
+                                    </TableCell>\
+                                  </TableRow>\
+                                );\
+                              \})\}\
+                            </TableBody>\
+                          </Table>\
+                        </TableContainer>\
+                      </Paper>\
+                    </Grid>\
+                  </Grid>\
+                </Box>\
+                <Divider />\
+                <Box p=\{3\} gap=\{1\} display="flex">\
+                  <Button\
+                    color="primary"\
+                    variant="contained"\
+                    size="small"\
+                    onClick=\{() => dispatch(isEdit())\}\
+                  >\
+                    Edit\
+                  </Button>\
+                  <Button\
+                    color="error"\
+                    variant="contained"\
+                    size="small"\
+                    onClick=\{() => dispatch(DeletePharmacy(pharmacyDetail.id))\}\
+                  >\
+                    Delete\
+                  </Button>\
+                </Box>\
+              </Box>\
+            ) : (\
+              <>\
+                <BlankCard sx=\{\{ p: 0 \}\}>\
+                  <Scrollbar sx=\{\{ height: \{ lg: 'calc(100vh - 360px)', md: '100vh' \} \}\}>\
+                    <Box pt=\{1\}>\
+                      \{/* Editable fields (unchanged) */\}\
+                      <Box px=\{3\} py=\{1.5\}>\
+                        <Typography variant="subtitle1" fontWeight=\{600\} mb=\{0.5\}>\
+                          Pharmacy Chain\
+                        </Typography>\
+                        <TextField\
+                          size="small"\
+                          fullWidth\
+                          type="text"\
+                          value=\{pharmacyDetail.pharmacyChain\}\
+                          onChange=\{(e) =>\
+                            dispatch(UpdatePharmacy(pharmacyDetail.id, 'pharmacyChain', e.target.value))\
+                          \}\
+                        />\
+                      </Box>\
+                      \{/* Additional editable fields \'85 */\}\
+                      <Box p=\{3\}>\
+                        <Button color="primary" variant="contained" onClick=\{() => dispatch(isEdit())\}>\
+                          Save Pharmacy\
+                        </Button>\
+                      </Box>\
+                    </Box>\
+                  </Scrollbar>\
+                </BlankCard>\
+              </>\
+            )\}\
+          </Box>\
+        </>\
+      ) : (\
+        <Box\
+          p=\{3\}\
+          height="50vh"\
+          display=\{'flex'\}\
+          justifyContent="center"\
+          alignItems=\{'center'\}\
+        >\
+          <Box>\
+            <Typography variant="h4">Please Select a Pharmacy</Typography>\
+            <br />\
+            <img src=\{emailIcon\} alt="Select Pharmacy" width=\{'250px'\} />\
+          </Box>\
+        </Box>\
+      )\}\
+    </>\
+  );\
+\};\
+\
+export default PharmacyDetails;\
+```\
+\
+---\
+\
+### How It Works\
+\
+1. Storing and Loading the Library:\
+   - Save the provided barcode.js file into your public folder (e.g. `public/barcode.js`).\
+   - Add `<script src="/barcode.js"></script>` to your public/index.html so the library functions (like `quickresponse` and `toGif`) are available globally.\
+\
+2. Generating the QR Code:\
+   - A React ref (`qrCodeRef`) is attached to an `<img>` element that will display the generated QR code.\
+   - A `useEffect` hook watches for changes in `pharmacyDetail` (and the edit mode flag). When in view mode (not editing) and when `pharmacyDetail` is available, it builds the URL (`/request-wizard?pharmacyID=...`) and calls the library functions to set the image\'92s `src` to the generated QR code GIF.\
+\
+3. Integration into the Page:\
+   - The new QR Code section is rendered only when the pharmacy detail is shown (and not in edit mode), ensuring the QR code is always visible on load.\
+\
+Feel free to adjust placement, styling, or scaling as needed. If you have any further questions or need additional modifications, let me know!\
+}

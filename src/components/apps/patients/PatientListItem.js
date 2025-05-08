@@ -11,14 +11,24 @@ import {
 
 import { IconStar, IconTrash } from '@tabler/icons';
 
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric'
+  });
+};
+
 const PatientListItem = ({
   onPatientClick,
   onStarredClick,
   onDeleteClick,
   id,
-  firstname,
-  lastname,
-  middleinitial,
+  first_name,
+  last_name,
+  middle_initial,
   email,
   dob,
   image,
@@ -37,13 +47,10 @@ const PatientListItem = ({
         <Stack direction="row" gap="10px" alignItems="center">
           <Box mr="auto">
             <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ maxWidth: '150px' }}>
-              {firstname} {middleinitial} {lastname}
+              {first_name} {middle_initial} {last_name}
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
-              {dob}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              {email}
+              {formatDate(dob)}
             </Typography>
           </Box>
           {/* ------------------------------------------- */}

@@ -57,6 +57,8 @@ import {
   IconNurse,
   IconBuildingHospital,
   IconUsers,
+  IconPrinter,
+  IconStethoscope,
 } from '@tabler/icons';
 
 import { uniqueId } from 'lodash';
@@ -140,11 +142,27 @@ const Menuitems = [
   },
   {
     id: uniqueId(),
+    title: 'Faxes',
+    icon: IconPrinter,
+    chip: '3',
+    chipColor: 'secondary',
+    href: '/apps/faxes',
+  },
+  {
+    id: uniqueId(),
     title: 'Patients',
     icon: IconUsers,
     chip: '2',
     chipColor: 'secondary',
     href: '/apps/patients',
+  },
+  {
+    id: uniqueId(),
+    title: 'Physicians',
+    icon: IconStethoscope,
+    chip: '1',
+    chipColor: 'secondary',
+    href: '/apps/physicians',
   },
   {
     id: uniqueId(),
@@ -167,6 +185,10 @@ const Menuitems = [
     title: 'Items',
     icon: IconMedicineSyrup,
     href: '/apps/items',
+  },
+  {
+    navlabel: true,
+    subheader: 'External Views',
   },
   {
     id: uniqueId(),
@@ -192,56 +214,56 @@ const Menuitems = [
   //   icon: IconShoppingCart,
   //   href: '/dashboards/ecommerce',
   // },
-  // {
-  //   id: uniqueId(),
-  //   title: 'Frontend pages',
-  //   icon: IconAppWindow,
-  //   href: '/frontend-pages/',
-  //   children: [
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Homepage',
-  //       icon: IconPoint,
-  //       href: '/frontend-pages/homepage',
-  //     },
-  //     {
-  //       id: uniqueId(),
-  //       title: 'About Us',
-  //       icon: IconPoint,
-  //       href: '/frontend-pages/about',
-  //     },
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Blog',
-  //       icon: IconPoint,
-  //       href: '/frontend-pages/blog',
-  //     },
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Blog Details',
-  //       icon: IconPoint,
-  //       href: '/frontend-pages/blog/Blog_1',
-  //     },
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Contact',
-  //       icon: IconPoint,
-  //       href: '/frontend-pages/contact',
-  //     },
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Portfolio',
-  //       icon: IconPoint,
-  //       href: '/frontend-pages/portfolio',
-  //     },
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Pricing',
-  //       icon: IconPoint,
-  //       href: '/frontend-pages/pricing',
-  //     },
-  //   ],
-  // },
+  {
+    id: uniqueId(),
+    title: 'Frontend pages',
+    icon: IconAppWindow,
+    href: '/frontend-pages/',
+    children: [
+      {
+        id: uniqueId(),
+        title: 'Homepage',
+        icon: IconPoint,
+        href: '/frontend-pages/homepage',
+      },
+      {
+        id: uniqueId(),
+        title: 'About Us',
+        icon: IconPoint,
+        href: '/frontend-pages/about',
+      },
+      {
+        id: uniqueId(),
+        title: 'Blog',
+        icon: IconPoint,
+        href: '/frontend-pages/blog',
+      },
+      {
+        id: uniqueId(),
+        title: 'Blog Details',
+        icon: IconPoint,
+        href: '/frontend-pages/blog/Blog_1',
+      },
+      {
+        id: uniqueId(),
+        title: 'Contact',
+        icon: IconPoint,
+        href: '/frontend-pages/contact',
+      },
+      {
+        id: uniqueId(),
+        title: 'Portfolio',
+        icon: IconPoint,
+        href: '/frontend-pages/portfolio',
+      },
+      {
+        id: uniqueId(),
+        title: 'Pricing',
+        icon: IconPoint,
+        href: '/frontend-pages/pricing',
+      },
+    ],
+  },
   // {
   //   id: uniqueId(),
   //   title: 'Blog',
