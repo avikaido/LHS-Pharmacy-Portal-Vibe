@@ -74,3 +74,4 @@ backend/.env
 backend/tmp/
 backend/logs/
 backend/uploads/
+backend/node_modules/
