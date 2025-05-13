@@ -126,3 +126,11 @@ backend/.cache/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Environment variables
+.env
+.env.local
+.env.*
+   
+# Configuration files with secrets
+supertokens.yaml
