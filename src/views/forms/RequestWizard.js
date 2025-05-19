@@ -290,7 +290,7 @@ const RequestWizard = () => {
     setLoadingLlm(true);
     setIsAnalyzing(true);
     try {
-      const response = await axios.post('http://localhost:5002/api/analyze-condition/analyze', {
+      const response = await axios.post('/api/analyze-condition/analyze', {
         condition: conditionDescription,
         medications: itemsData.map(item => ({
           name: item.BrandName || item.GenericName,
@@ -330,7 +330,7 @@ const RequestWizard = () => {
 
     setLoadingLlm(true);
     try {
-      const response = await axios.post('http://localhost:5002/api/analyze-condition/analyze', {
+      const response = await axios.post('/api/analyze-condition/analyze', {
         condition: userResponse,
         medications: itemsData.map(item => ({
           name: item.BrandName || item.GenericName,
