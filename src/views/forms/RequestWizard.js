@@ -33,6 +33,73 @@ import Logo from 'src/layouts/full/shared/logo/Logo';
 
 const steps = ['Describe Condition', 'Medicine Info', 'Physician Info', 'Patient Info', 'Finish'];
 
+// Mapping of conditions to commonly prescribed medications
+const conditionToMedications = {
+  'allergies': [
+    { name: 'Allegra (Fexofenadine)', description: 'Antihistamine for seasonal allergies' },
+    { name: 'Zyrtec (Cetirizine)', description: 'Antihistamine for allergic rhinitis' },
+    { name: 'Singulair (Montelukast)', description: 'Leukotriene receptor antagonist for asthma and allergies' }
+  ],
+  'anxiety': [
+    { name: 'Xanax (Alprazolam)', description: 'Benzodiazepine for anxiety disorders' },
+    { name: 'Lexapro (Escitalopram)', description: 'SSRI for anxiety and depression' },
+    { name: 'Buspar (Buspirone)', description: 'Anti-anxiety medication' }
+  ],
+  'arthritis': [
+    { name: 'Celebrex (Celecoxib)', description: 'NSAID for arthritis pain' },
+    { name: 'Methotrexate', description: 'DMARD for rheumatoid arthritis' },
+    { name: 'Humira (Adalimumab)', description: 'Biologic for rheumatoid arthritis' }
+  ],
+  'asthma': [
+    { name: 'Advair (Fluticasone/Salmeterol)', description: 'Combination inhaler for asthma' },
+    { name: 'Symbicort (Budesonide/Formoterol)', description: 'Combination inhaler for asthma' },
+    { name: 'Singulair (Montelukast)', description: 'Leukotriene receptor antagonist' }
+  ],
+  'back_pain': [
+    { name: 'Flexeril (Cyclobenzaprine)', description: 'Muscle relaxant' },
+    { name: 'Robaxin (Methocarbamol)', description: 'Muscle relaxant' },
+    { name: 'Tramadol', description: 'Pain medication' }
+  ],
+  'depression': [
+    { name: 'Zoloft (Sertraline)', description: 'SSRI for depression' },
+    { name: 'Prozac (Fluoxetine)', description: 'SSRI for depression' },
+    { name: 'Wellbutrin (Bupropion)', description: 'Atypical antidepressant' }
+  ],
+  'diabetes': [
+    { name: 'Metformin', description: 'Oral diabetes medication' },
+    { name: 'Glipizide', description: 'Sulfonylurea for diabetes' },
+    { name: 'Januvia (Sitagliptin)', description: 'DPP-4 inhibitor for diabetes' }
+  ],
+  'high_blood_pressure': [
+    { name: 'Lisinopril', description: 'ACE inhibitor' },
+    { name: 'Amlodipine', description: 'Calcium channel blocker' },
+    { name: 'Metoprolol', description: 'Beta blocker' }
+  ],
+  'high_cholesterol': [
+    { name: 'Lipitor (Atorvastatin)', description: 'Statin for cholesterol' },
+    { name: 'Crestor (Rosuvastatin)', description: 'Statin for cholesterol' },
+    { name: 'Zetia (Ezetimibe)', description: 'Cholesterol absorption inhibitor' }
+  ],
+  'migraine': [
+    { name: 'Imitrex (Sumatriptan)', description: 'Triptan for migraine' },
+    { name: 'Maxalt (Rizatriptan)', description: 'Triptan for migraine' },
+    { name: 'Topamax (Topiramate)', description: 'Preventive medication for migraines' }
+  ]
+};
+
+const commonConditions = [
+  { value: 'allergies', label: 'Allergies' },
+  { value: 'anxiety', label: 'Anxiety' },
+  { value: 'arthritis', label: 'Arthritis' },
+  { value: 'asthma', label: 'Asthma' },
+  { value: 'back_pain', label: 'Back Pain' },
+  { value: 'depression', label: 'Depression' },
+  { value: 'diabetes', label: 'Diabetes' },
+  { value: 'high_blood_pressure', label: 'High Blood Pressure' },
+  { value: 'high_cholesterol', label: 'High Cholesterol' },
+  { value: 'migraine', label: 'Migraine' }
+];
+
 const genders = [
   {
     value: 'female',
@@ -150,34 +217,36 @@ const RequestWizard = () => {
   const [followUpQuestion, setFollowUpQuestion] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [userResponse, setUserResponse] = useState('');
-
-  const [values, setValues] = React.useState({
-    firstname: '',
-    middlename: '',
-    lastname: '',
-    dob: '',
-    gender: '',
-    phone: '',
-    email: '',
-    address: '',
-    address2: '',
-    city: '',
-    state: '',
-    zipcode: '',
-    ecname: '',
-    ecrelation: '',
-    ecphone: '',
-    notes: '',
-    requests: [],
-    insurance1: '',
-    insurance2: '',
-    insurance1id: '',
-    insurance2id: '',
+  const [pharmacyDetails, setPharmacyDetails] = useState({
+    id: '',
+    name: '',
+    address: ''
   });
+  const [selectedCondition, setSelectedCondition] = useState('');
+  const [conditionSearchTerm, setConditionSearchTerm] = useState('');
+  const [filteredConditions, setFilteredConditions] = useState([]);
+  const [showConditions, setShowConditions] = useState(false);
+  const [recommendedMedications, setRecommendedMedications] = useState([]);
 
   useEffect(() => {
     dispatch(fetchItems());
   }, [dispatch]);
+
+  useEffect(() => {
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const pharmacyID = urlParams.get('pharmacyID');
+    const pharmacyName = urlParams.get('pharmacyName');
+    const pharmacyAddress = urlParams.get('pharmacyAddress');
+
+    if (pharmacyID && pharmacyName && pharmacyAddress) {
+      setPharmacyDetails({
+        id: pharmacyID,
+        name: pharmacyName,
+        address: pharmacyAddress
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (searchTerm) {
@@ -194,6 +263,17 @@ const RequestWizard = () => {
       setFilteredItems([]);
     }
   }, [searchTerm, itemsData]);
+
+  useEffect(() => {
+    if (conditionSearchTerm) {
+      const results = commonConditions.filter(condition =>
+        condition.label.toLowerCase().includes(conditionSearchTerm.toLowerCase())
+      );
+      setFilteredConditions(results);
+    } else {
+      setFilteredConditions(commonConditions);
+    }
+  }, [conditionSearchTerm]);
 
   useEffect(() => {
   const fetchPhysicianSuggestions = async () => {
@@ -282,46 +362,82 @@ const RequestWizard = () => {
     setPhysicianSuggestions([]);
   };
 
+  const handleConditionSelect = (condition) => {
+    setSelectedCondition(condition.value);
+    setConditionSearchTerm(condition.label);
+    setConditionDescription(condition.label);
+    setShowConditions(false);
+    
+    // Set recommended medications based on the condition
+    const medications = conditionToMedications[condition.value] || [];
+    setRecommendedMedications(medications);
+    
+    // Create a response object similar to LLM response but with direct recommendations
+    const directResponse = {
+      diagnosis: `Based on your selection of ${condition.label}, here are the commonly prescribed medications:`,
+      recommendedMedications: medications.map(med => ({
+        name: med.name,
+        reason: med.description
+      })),
+      considerations: 'Please consult with your healthcare provider to determine the most appropriate medication for your specific situation.',
+      needsMoreInfo: false
+    };
+    
+    setLlmResponse(directResponse);
+    setIsAnalyzing(false);
+    handleNext(); // Automatically proceed to the next step
+  };
+
   const handleConditionSubmit = async () => {
     if (!conditionDescription.trim()) {
       return;
     }
 
-    setLoadingLlm(true);
-    setIsAnalyzing(true);
-    try {
-      const response = await axios.post('/api/analyze-condition/analyze', {
-        condition: conditionDescription,
-        medications: itemsData.map(item => ({
-          name: item.BrandName || item.GenericName,
-          description: item.Description || ''
-        })),
-        conversationHistory: conversationHistory
-      });
+    // Only use LLM if no direct condition was selected
+    if (!selectedCondition) {
+      setLoadingLlm(true);
+      setIsAnalyzing(true);
+      try {
+        const response = await axios.post('/api/analyze-condition/analyze', {
+          condition: conditionDescription,
+          medications: itemsData.map(item => ({
+            name: item.BrandName || item.GenericName,
+            description: item.Description || ''
+          })),
+          conversationHistory: conversationHistory,
+          // Updated prompt to focus only on prescription medications
+          prompt: `You are a medical assistant helping to identify appropriate prescription medications for the patient's condition. 
+          Focus ONLY on prescription medications that require a doctor's prescription. 
+          Do NOT recommend over-the-counter medications, supplements, or alternative therapies.
+          Consider the patient's described symptoms and medical history to suggest appropriate prescription medications.
+          For each recommendation, explain why it might be suitable for their specific condition.`
+        });
 
-      const newResponse = response.data;
-      setLlmResponse(newResponse);
-      
-      // Add the new interaction to conversation history
-      setConversationHistory(prev => [...prev, {
-        user: conditionDescription,
-        assistant: newResponse
-      }]);
+        const newResponse = response.data;
+        setLlmResponse(newResponse);
+        
+        setConversationHistory(prev => [...prev, {
+          user: conditionDescription,
+          assistant: newResponse
+        }]);
 
-      // If the LLM needs more information, show the follow-up question
-      if (newResponse.needsMoreInfo) {
-        setFollowUpQuestion(newResponse.followUpQuestion);
-      } else {
-        setIsAnalyzing(false);
-        handleNext();
+        if (newResponse.needsMoreInfo) {
+          setFollowUpQuestion(newResponse.followUpQuestion);
+        } else {
+          setIsAnalyzing(false);
+          handleNext();
+        }
+      } catch (error) {
+        console.error('Error analyzing condition:', error.response?.data || error.message);
+        const errorMessage = error.response?.data?.message || 
+          'Failed to analyze condition. Please try again later.';
+        alert(errorMessage);
+      } finally {
+        setLoadingLlm(false);
       }
-    } catch (error) {
-      console.error('Error analyzing condition:', error.response?.data || error.message);
-      const errorMessage = error.response?.data?.message || 
-        'Failed to analyze condition. Please try again later.';
-      alert(errorMessage);
-    } finally {
-      setLoadingLlm(false);
+    } else {
+      // If we have direct recommendations, just proceed to next step
+      handleNext();
     }
   };
 
@@ -384,6 +500,26 @@ const RequestWizard = () => {
   };
 
   const handleSteps = (step) => {
+    const renderPharmacyDetails = () => (
+      <Box mt={4} p={2} sx={{ backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
+        <Typography variant="subtitle1" color="primary" gutterBottom>
+          Selected Pharmacy
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="body1" fontWeight="500">
+              {pharmacyDetails.name}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="body2" color="text.secondary">
+              {pharmacyDetails.address}
+            </Typography>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+
     switch (step) {
       case 0: // Describe Condition
         return (
@@ -395,95 +531,166 @@ const RequestWizard = () => {
               This step is optional. You can skip it if you already know which medication you need or prefer not to share your condition details.
             </Typography>
 
-            {/* Only show initial condition input if no conversation has started */}
-            {conversationHistory.length === 0 && (
+            {/* Common Conditions Selector */}
+            <Box mb={4}>
+              <CustomFormLabel htmlFor="common-condition">Select from Common Conditions</CustomFormLabel>
+              <CustomTextField
+                id="common-condition"
+                variant="outlined"
+                fullWidth
+                value={conditionSearchTerm}
+                onChange={(e) => {
+                  setConditionSearchTerm(e.target.value);
+                  setShowConditions(true);
+                }}
+                onFocus={() => setShowConditions(true)}
+                placeholder="Search or select a condition..."
+                InputProps={{
+                  endAdornment: (
+                    <Box
+                      onClick={() => setShowConditions(!showConditions)}
+                      sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                    >
+                      {showConditions ? '▲' : '▼'}
+                    </Box>
+                  ),
+                }}
+              />
+              {showConditions && (
+                <List 
+                  sx={{ 
+                    mt: 1, 
+                    maxHeight: 300, 
+                    overflow: 'auto', 
+                    border: '1px solid #e0e0e0', 
+                    borderRadius: 1,
+                    position: 'relative',
+                    zIndex: 1,
+                    bgcolor: 'background.paper'
+                  }}
+                >
+                  {filteredConditions.map((condition) => (
+                    <ListItem
+                      key={condition.value}
+                      button
+                      onClick={() => handleConditionSelect(condition)}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                        },
+                      }}
+                    >
+                      <ListItemText primary={condition.label} />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </Box>
+
+            {/* Only show the description field if no condition is selected */}
+            {!selectedCondition && (
               <>
-                <CustomFormLabel htmlFor="condition">Describe your condition or symptoms</CustomFormLabel>
-                <CustomTextField
-                  id="condition"
-                  multiline
-                  rows={4}
-                  variant="outlined"
-                  fullWidth
-                  value={conditionDescription}
-                  onChange={(e) => setConditionDescription(e.target.value)}
-                  placeholder="Please describe your condition, symptoms, and any relevant medical history..."
-                />
-                <Box mt={2} display="flex" gap={2}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleConditionSubmit}
-                    disabled={!conditionDescription.trim() || loadingLlm}
-                  >
-                    {loadingLlm ? <CircularProgress size={24} /> : 'Analyze Condition'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleNext}
-                  >
-                    Skip This Step
-                  </Button>
+                {/* Or Divider */}
+                <Box sx={{ display: 'flex', alignItems: 'center', my: 3 }}>
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+                  <Typography sx={{ mx: 2, color: 'text.secondary' }}>
+                    OR describe your condition in detail for a more thorough analysis
+                  </Typography>
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
                 </Box>
+
+                {/* Only show initial condition input if no conversation has started */}
+                {conversationHistory.length === 0 && (
+                  <>
+                    <CustomFormLabel htmlFor="condition">Describe your condition or symptoms</CustomFormLabel>
+                    <CustomTextField
+                      id="condition"
+                      multiline
+                      rows={4}
+                      variant="outlined"
+                      fullWidth
+                      value={conditionDescription}
+                      onChange={(e) => setConditionDescription(e.target.value)}
+                      placeholder="Please describe your condition, symptoms, and any relevant medical history..."
+                    />
+                    <Box mt={2} display="flex" gap={2}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleConditionSubmit}
+                        disabled={!conditionDescription.trim() || loadingLlm}
+                      >
+                        {loadingLlm ? <CircularProgress size={24} /> : 'Analyze Condition'}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleNext}
+                      >
+                        Skip This Step
+                      </Button>
+                    </Box>
+                  </>
+                )}
+
+                {/* Show conversation history if there is any */}
+                {conversationHistory.length > 0 && (
+                  <Box mt={4}>
+                    <Typography variant="h6" gutterBottom>
+                      Conversation History
+                    </Typography>
+                    {conversationHistory.map((exchange, index) => (
+                      <Box key={index} mb={2}>
+                        <Typography variant="subtitle2" color="primary">
+                          Your description:
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                          {exchange.user}
+                        </Typography>
+                        <Typography variant="subtitle2" color="primary">
+                          Analysis:
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                          {exchange.assistant.diagnosis}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+
+                {/* Show follow-up question if there is one */}
+                {followUpQuestion && (
+                  <Box mt={4}>
+                    <Typography variant="subtitle1" color="primary" gutterBottom>
+                      To provide better recommendations, please answer:
+                    </Typography>
+                    <Typography variant="body1" paragraph>
+                      {followUpQuestion}
+                    </Typography>
+                    <CustomTextField
+                      multiline
+                      rows={2}
+                      variant="outlined"
+                      fullWidth
+                      value={userResponse}
+                      onChange={(e) => setUserResponse(e.target.value)}
+                      placeholder="Type your response here..."
+                    />
+                    <Box mt={2}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleFollowUpResponse}
+                        disabled={!userResponse.trim() || loadingLlm}
+                      >
+                        {loadingLlm ? <CircularProgress size={24} /> : 'Submit Response'}
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
               </>
             )}
-
-            {/* Show conversation history if there is any */}
-            {conversationHistory.length > 0 && (
-              <Box mt={4}>
-                <Typography variant="h6" gutterBottom>
-                  Conversation History
-                </Typography>
-                {conversationHistory.map((exchange, index) => (
-                  <Box key={index} mb={2}>
-                    <Typography variant="subtitle2" color="primary">
-                      Your description:
-                    </Typography>
-                    <Typography variant="body2" paragraph>
-                      {exchange.user}
-                    </Typography>
-                    <Typography variant="subtitle2" color="primary">
-                      Analysis:
-                    </Typography>
-                    <Typography variant="body2" paragraph>
-                      {exchange.assistant.diagnosis}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            )}
-
-            {/* Show follow-up question if there is one */}
-            {followUpQuestion && (
-              <Box mt={4}>
-                <Typography variant="subtitle1" color="primary" gutterBottom>
-                  To provide better recommendations, please answer:
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  {followUpQuestion}
-                </Typography>
-                <CustomTextField
-                  multiline
-                  rows={2}
-                  variant="outlined"
-                  fullWidth
-                  value={userResponse}
-                  onChange={(e) => setUserResponse(e.target.value)}
-                  placeholder="Type your response here..."
-                />
-                <Box mt={2}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleFollowUpResponse}
-                    disabled={!userResponse.trim() || loadingLlm}
-                  >
-                    {loadingLlm ? <CircularProgress size={24} /> : 'Submit Response'}
-                  </Button>
-                </Box>
-              </Box>
-            )}
+            {renderPharmacyDetails()}
           </Box>
         );
 
@@ -569,6 +776,7 @@ const RequestWizard = () => {
                 ))}
               </List>
             )}
+            {renderPharmacyDetails()}
           </Box>
         );
 
@@ -618,6 +826,7 @@ const RequestWizard = () => {
                 </List>
               </Grid> 
             </Grid>
+            {renderPharmacyDetails()}
           </Box>
         );
 
@@ -853,6 +1062,7 @@ const RequestWizard = () => {
                 />
               </Grid>
             </Grid>  
+            {renderPharmacyDetails()}
           </Box>
         );
 
@@ -875,6 +1085,7 @@ const RequestWizard = () => {
                 />
               </Grid>
             </Grid>     
+            {renderPharmacyDetails()}
           </Box>
         );
 

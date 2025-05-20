@@ -102,7 +102,7 @@ const PharmacyDetails = () => {
       window.toGif
     ) {
       // Build the URL to be encoded; replace pharmacyDetail.id in the URL
-      const url = `/request-wizard?pharmacyID=${pharmacyDetail.id}`;
+      const url = `https://app.askyourprimary.com/request-wizard?pharmacyID=${pharmacyDetail.id}&pharmacyName=${pharmacyDetail.pharmacyName}&pharmacyAddress=${pharmacyDetail.address}`;
       // Generate the QR code GIF using the library functions.
       // The second parameter (6) is a scaling factor.
       qrCodeRef.current.src = window.toGif(window.quickresponse(url), 6);
