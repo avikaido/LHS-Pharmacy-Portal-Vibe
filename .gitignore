@@ -134,3 +134,5 @@ backend/.cache/
    
 # Configuration files with secrets
 supertokens.yaml
+
+.csv

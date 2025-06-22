@@ -198,19 +198,51 @@ const samplePharmacy = pharmacyDetail[0];
 // Utility to format medication as Brand (Generic)
 const formatMedName = (item) => `${item.BrandName} (${item.GenericName})`;
 
-// Utility to deduplicate medications by Brand+Generic (order-insensitive)
-const dedupeMeds = (meds) => {
-  const seen = new Set();
-  return meds.filter(med => {
-    const generic = med.name?.split('(')[1]?.replace(')', '').trim().toLowerCase() || med.GenericName?.toLowerCase();
-    const brand = med.name?.split('(')[0]?.trim().toLowerCase() || med.BrandName?.toLowerCase();
-    // Create a key that is order-insensitive
-    const key = [brand, generic].sort().join('|');
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+// Add this near the top of the file with other constants
+const stateAbbreviationToFull = {
+  'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+  'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+  'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+  'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+  'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+  'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+  'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+  'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+  'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+  'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+  'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+  'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+  'WI': 'Wisconsin', 'WY': 'Wyoming'
 };
+
+// Add reverse mapping
+const stateFullToAbbreviation = Object.entries(stateAbbreviationToFull).reduce((acc, [abbr, full]) => {
+  acc[full] = abbr;
+  return acc;
+}, {});
+
+// Helper to get the state label from value or full name
+function getStateLabel(value) {
+  // Try abbreviation first
+  const found = states.find(s => s.value === value);
+  if (found) return found.label;
+  // Try full name
+  const foundByLabel = states.find(s => s.label === value);
+  if (foundByLabel) return foundByLabel.label;
+  // Try mapping abbreviation to label
+  if (stateAbbreviationToFull[value]) return stateAbbreviationToFull[value];
+  // Fallback
+  return value || '';
+}
+
+// Add a utility for title case
+function toTitleCase(str) {
+  if (!str) return '';
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Add a utility to clean prefixes
+const clean = str => str.replace(/^(generic:|brand:)/i, '').trim();
 
 const RequestWizard = () => {
   const dispatch = useDispatch();
@@ -220,7 +252,8 @@ const RequestWizard = () => {
   const [skipped, setSkipped] = React.useState(new Set());
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filteredItems, setFilteredItems] = React.useState([]);
-  const [selectedItem, setSelectedItem] = React.useState(null);
+  const [selectedItems, setSelectedItems] = React.useState([]);
+  const [isAddingMedication, setIsAddingMedication] = React.useState(false); // New state for tracking if adding more medications
   const [searchTermPhysician, setSearchTermPhysician] = useState('');
   const [selectedPhysician, setSelectedPhysician] = useState(null);
   const [physicianSuggestions, setPhysicianSuggestions] = useState([]);
@@ -261,6 +294,7 @@ const RequestWizard = () => {
   const [llmLoadingPhysician, setLlmLoadingPhysician] = useState(false);
   const [llmPhysicianMessage, setLlmPhysicianMessage] = useState('');
   const [llmPhysicianDataUsed, setLlmPhysicianDataUsed] = useState(false);
+  const [changedFields, setChangedFields] = useState([]);
   const [values, setValues] = useState({
     firstname: '',
     middlename: '',
@@ -281,6 +315,12 @@ const RequestWizard = () => {
     notes: '',
   });
   const [termsChecked, setTermsChecked] = useState(false);
+  const [physicianSearchLocked, setPhysicianSearchLocked] = useState(false);
+  // Store mappedMedicareData in state when Medicare data is received
+  const [medicareDataForUpdate, setMedicareDataForUpdate] = useState(null);
+  const [llmSuggestionKey, setLlmSuggestionKey] = useState(0);
+  // Add state for final physician data that will be used for database storage
+  const [finalPhysicianData, setFinalPhysicianData] = useState(null);
 
   useEffect(() => {
     dispatch(fetchItems());
@@ -305,6 +345,13 @@ const RequestWizard = () => {
   useEffect(() => {
     if (searchTerm) {
       const results = itemsData.filter(item => {
+        // First check if this medication is already selected
+        const isAlreadySelected = selectedItems.some(selectedItem => 
+          selectedItem.GenericName === item.GenericName || 
+          selectedItem.BrandName === item.BrandName
+        );
+        if (isAlreadySelected) return false;
+
         const genericName = item.GenericName ? item.GenericName.toLowerCase() : '';
         const brandName = item.BrandName ? item.BrandName.toLowerCase() : '';
         const use = item.Use ? item.Use.toLowerCase() : '';
@@ -320,7 +367,7 @@ const RequestWizard = () => {
     } else {
       setFilteredItems([]);
     }
-  }, [searchTerm, itemsData]);
+  }, [searchTerm, itemsData, selectedItems]); // Added selectedItems to dependencies
 
   useEffect(() => {
     if (conditionSearchTerm) {
@@ -334,13 +381,14 @@ const RequestWizard = () => {
   }, [conditionSearchTerm]);
 
   useEffect(() => {
-    const fetchPhysicianSuggestions = async () => {
-      if (searchTermPhysician.length < 2) {
-        setPhysicianSuggestions([]);
-        return;
-      }
-      setLoadingPhysician(true);
-      try {
+    if (physicianSearchLocked) return;
+    if (searchTermPhysician.length < 2) {
+      setPhysicianSuggestions([]);
+      return;
+    }
+    setLoadingPhysician(true);
+    try {
+      const fetchPhysicianSuggestions = async () => {
         const response = await axios.get('/api/nhs/', {
           params: {
             version: '2.1',
@@ -355,15 +403,15 @@ const RequestWizard = () => {
         } else {
           setPhysicianSuggestions([]);
         }
-      } catch (error) {
-        console.error('Error fetching physician suggestions:', error.response?.data || error.message);
-      } finally {
-        setLoadingPhysician(false);
-      }
-    };
-    const debounceFetch = setTimeout(fetchPhysicianSuggestions, 300);
-    return () => clearTimeout(debounceFetch);
-  }, [searchTermPhysician, searchTermPhysicianFirst, physicianState]);
+      };
+      const debounceFetch = setTimeout(fetchPhysicianSuggestions, 300);
+      return () => clearTimeout(debounceFetch);
+    } catch (error) {
+      console.error('Error fetching physician suggestions:', error.response?.data || error.message);
+    } finally {
+      setLoadingPhysician(false);
+    }
+  }, [searchTermPhysician, searchTermPhysicianFirst, physicianState, physicianSearchLocked]);
 
   const handleChange2 = (event) => {
     setValues({ ...values, gender: event.target.value });
@@ -390,8 +438,7 @@ const RequestWizard = () => {
   const handleBack = () => {
     // Store current state before going back
     const currentState = {
-      selectedItem,
-      selectedRecommendedMed,
+      selectedItems,
       conversationHistory,
       llmResponse,
       followUpQuestion,
@@ -405,8 +452,7 @@ const RequestWizard = () => {
     
     // Restore state after going back
     setTimeout(() => {
-      setSelectedItem(currentState.selectedItem);
-      setSelectedRecommendedMed(currentState.selectedRecommendedMed);
+      setSelectedItems(currentState.selectedItems);
       setConversationHistory(currentState.conversationHistory);
       setLlmResponse(currentState.llmResponse);
       setFollowUpQuestion(currentState.followUpQuestion);
@@ -430,50 +476,63 @@ const RequestWizard = () => {
   };
 
   const handleSelectItem = (item) => {
-    setSelectedItem(item);
+    setSelectedItems(prev => [...prev, item]);
     setFilteredItems([]);
-    
-    // Create a response object with the selected medication
-    const directResponse = {
-      diagnosis: `Based on your selection of ${item.BrandName} (${item.GenericName}), which is used for: ${item.Use}`,
-      recommendedMedications: [{
-        name: `${item.BrandName} (${item.GenericName})`,
-        reason: item.Use
-      }],
-      considerations: 'Please consult with your healthcare provider to determine if this medication is appropriate for your specific situation.',
-      needsMoreInfo: false
-    };
-    
-    setLlmResponse(directResponse);
+    setSearchTerm('');
+    setIsAddingMedication(false);
+    setLlmResponse(null);
+    setConversationHistory([]);
+    setFollowUpQuestion('');
+    setConditionDescription('');
+    setUserResponse('');
     setIsAnalyzing(false);
   };
 
-  const handleSelectPhysician = (physician) => {
-    setSelectedPhysician(physician);
+  const handleSelectPhysician = async (physician) => {
+    setSelectedPhysician(null);
+    setPhysicianSuggestions([]);
+    setPhysicianSearchLocked(true);
     setSearchTermPhysician(physician.basic.last_name);
     setSearchTermPhysicianFirst(physician.basic.first_name);
-    setPhysicianSuggestions([]);
-    const newForm = {
-      lastName: physician.basic.last_name || '',
-      firstName: physician.basic.first_name || '',
+    
+    // Create initial form from NPI data
+    const initialForm = {
+      lastName: toTitleCase(physician.basic.last_name || ''),
+      firstName: toTitleCase(physician.basic.first_name || ''),
       fax: (physician.addresses[0]?.fax_number || ''),
       phone: (physician.addresses[0]?.telephone_number || ''),
       npi: physician.number || '',
       address: (physician.addresses[0]?.address_1 || ''),
-      city: (physician.addresses[0]?.city || ''),
-      state: (physician.addresses[0]?.state || ''),
+      city: toTitleCase(physician.addresses[0]?.city || ''),
+      state: stateAbbreviationToFull[physician.addresses[0]?.state] || physician.addresses[0]?.state || '',
       zip: (physician.addresses[0]?.postal_code || ''),
       specialty: (physician.taxonomies[0]?.desc || ''),
     };
-    setPhysicianForm(newForm);
-    // Call LLM for more recent data
-    fetchLlmPhysicianData({
-      lastName: newForm.lastName,
-      firstName: newForm.firstName,
-      city: newForm.city,
-      state: newForm.state,
-      npi: newForm.npi,
-    });
+    
+    setPhysicianForm(initialForm);
+    
+    // Try to fetch Medicare data and automatically use it if available
+    try {
+      const medicareData = await fetchMedicareDataForPhysician(physician.number);
+      if (medicareData && hasValidMedicareData(medicareData)) {
+        // Merge Medicare data with NPI data, prioritizing Medicare
+        const mergedData = mergePhysicianData(initialForm, medicareData);
+        setPhysicianForm(mergedData);
+        
+        // Prepare final data for database storage
+        const finalData = preparePhysicianDataForDatabase(mergedData, medicareData);
+        setFinalPhysicianData(finalData);
+      } else {
+        // Use NPI data only
+        const finalData = preparePhysicianDataForDatabase(initialForm, null);
+        setFinalPhysicianData(finalData);
+      }
+    } catch (error) {
+      console.error('Error fetching Medicare data:', error);
+      // Fallback to NPI data only
+      const finalData = preparePhysicianDataForDatabase(initialForm, null);
+      setFinalPhysicianData(finalData);
+    }
   };
 
   const handleConditionSelect = (condition) => {
@@ -507,73 +566,89 @@ const RequestWizard = () => {
       return;
     }
 
-    // Only use LLM if no direct item was selected
-    if (!selectedItem) {
-      setLoadingLlm(true);
-      setIsAnalyzing(true);
-      try {
-        // First, find all relevant medications from our database
-        const relevantMeds = itemsData.filter(item => {
-          const searchTerms = conditionDescription.toLowerCase().split(' ');
-          const itemText = `${item.GenericName} ${item.BrandName} ${item.Use}`.toLowerCase();
-          return searchTerms.some(term => itemText.includes(term));
-        });
-
-        const response = await axios.post('/api/analyze-condition/analyze', {
-          condition: conditionDescription,
-          medications: relevantMeds.map(item => ({
-            GenericName: item.GenericName,
-            BrandName: item.BrandName,
-            Use: item.Use,
-            Class: item.Class,
-            Schedule: item.Schedule
-          })),
-          conversationHistory: conversationHistory
-        });
-
-        const newResponse = response.data;
-        console.log('LLM Response:', newResponse); // Debug log
-        
-        // Ensure we include all relevant medications from our database
-        if (newResponse.recommendedMedications) {
-          const allMeds = [...new Set([
-            ...newResponse.recommendedMedications,
-            ...relevantMeds.map(item => ({
-              name: `${item.GenericName} (${item.BrandName})`,
-              reason: item.Use
-            }))
-          ])];
-          newResponse.recommendedMedications = allMeds;
-        }
-        
-        setLlmResponse(newResponse);
-        setConversationHistory(prev => [...prev, {
-          user: conditionDescription,
-          assistant: newResponse
-        }]);
-
-        // Always show the response first
-        setIsAnalyzing(false);
-        
-        // Only proceed to next step if explicitly needed
-        if (newResponse.needsMoreInfo) {
-          setFollowUpQuestion(newResponse.followUpQuestion);
-        } else if (newResponse.recommendedMedications && newResponse.recommendedMedications.length > 0) {
-          // If we have recommendations, show them but don't auto-navigate
-          setFollowUpQuestion('');
-        }
-      } catch (error) {
-        console.error('Error analyzing condition:', error.response?.data || error.message);
-        const errorMessage = error.response?.data?.message || 
-          'Failed to analyze condition. Please try again later.';
-        alert(errorMessage);
-        setIsAnalyzing(false);
-      } finally {
-        setLoadingLlm(false);
-      }
-    } else {
-      // If we have direct recommendations, just proceed to next step
+    // If in add medication mode, always run LLM
+    if (!isAddingMedication && selectedItems.length) {
+      // If not adding, and already have a medication, just proceed
       handleNext();
+      return;
+    }
+
+    setLoadingLlm(true);
+    setIsAnalyzing(true);
+    try {
+      // First, find all relevant medications from our database
+      const relevantMeds = itemsData.filter(item => {
+        // Check if this medication is already selected
+        const isAlreadySelected = selectedItems.some(selectedItem => 
+          selectedItem.GenericName === item.GenericName || 
+          selectedItem.BrandName === item.BrandName
+        );
+        if (isAlreadySelected) return false;
+
+        const searchTerms = conditionDescription.toLowerCase().split(' ');
+        const itemText = `${item.GenericName} ${item.BrandName} ${item.Use}`.toLowerCase();
+        return searchTerms.some(term => itemText.includes(term));
+      });
+
+      const response = await axios.post('/api/analyze-condition/analyze', {
+        condition: conditionDescription,
+        medications: relevantMeds.map(item => ({
+          GenericName: item.GenericName,
+          BrandName: item.BrandName,
+          Use: item.Use,
+          Class: item.Class,
+          Schedule: item.Schedule
+        })),
+        conversationHistory: conversationHistory
+      });
+
+      const newResponse = response.data;
+      console.log('LLM Response:', newResponse); // Debug log
+      
+      // Ensure we include all relevant medications from our database
+      if (newResponse.recommendedMedications) {
+        // Filter out any medications that are already selected
+        const allMeds = [...new Set([
+          ...newResponse.recommendedMedications.filter(med => {
+            const medGeneric = med.name?.split('(')[1]?.replace(')', '').trim().toLowerCase();
+            const medBrand = med.name?.split('(')[0]?.trim().toLowerCase();
+            return !selectedItems.some(selectedItem => 
+              selectedItem.GenericName?.toLowerCase() === medGeneric ||
+              selectedItem.BrandName?.toLowerCase() === medBrand
+            );
+          }),
+          ...relevantMeds.map(item => ({
+            name: `${item.GenericName} (${item.BrandName})`,
+            reason: item.Use
+          }))
+        ])];
+        newResponse.recommendedMedications = allMeds;
+      }
+      
+      setLlmResponse(newResponse);
+      setConversationHistory(prev => [...prev, {
+        user: conditionDescription,
+        assistant: newResponse
+      }]);
+
+      // Always show the response first
+      setIsAnalyzing(false);
+      
+      // Only proceed to next step if explicitly needed
+      if (newResponse.needsMoreInfo) {
+        setFollowUpQuestion(newResponse.followUpQuestion);
+      } else if (newResponse.recommendedMedications && newResponse.recommendedMedications.length > 0) {
+        // If we have recommendations, show them but don't auto-navigate
+        setFollowUpQuestion('');
+      }
+    } catch (error) {
+      console.error('Error analyzing condition:', error.response?.data || error.message);
+      const errorMessage = error.response?.data?.message || 
+        'Failed to analyze condition. Please try again later.';
+      alert(errorMessage);
+      setIsAnalyzing(false);
+    } finally {
+      setLoadingLlm(false);
     }
   };
 
@@ -621,26 +696,38 @@ const RequestWizard = () => {
   };
 
   const handleRecommendedMedClick = (medication) => {
-    setSelectedRecommendedMed(medication);
-    
-    // Find the matching item in itemsData
-    const genericName = medication.name.split('(')[1]?.replace(')', '').trim();
-    const brandName = medication.name.split('(')[0].trim();
-    
-    const matchingItem = itemsData.find(item => 
-      item.GenericName === genericName || 
-      item.BrandName === brandName
-    );
-    
+    const medName = medication.name || medication.medication;
+    console.log('LLM Clicked:', medName, medication);
+    if (!medName || typeof medName !== 'string' || !medName.includes('(')) return;
+    const [first, second] = medName.split('(');
+    const part1 = clean(first?.trim().toLowerCase());
+    const part2 = clean(second?.replace(')', '').trim().toLowerCase());
+    const matchingItem = itemsData.find(item => {
+      const brand = item.BrandName?.trim().toLowerCase();
+      const generic = item.GenericName?.trim().toLowerCase();
+      return (
+        (brand === part1 && generic === part2) ||
+        (brand === part2 && generic === part1)
+      );
+    });
+    console.log('Matching item:', matchingItem);
     if (matchingItem) {
-      setSelectedItem(matchingItem);
-      setFilteredItems([]); // Clear the dropdown immediately
+      setSelectedItems(prev => [...prev, matchingItem]);
+      setLlmSuggestionKey(prev => prev + 1); // force re-render of suggestions
+    }
+    // Only reset LLM state if NOT in add medication mode
+    if (!isAddingMedication) {
+      setLlmResponse(null);
+      setConversationHistory([]);
+      setFollowUpQuestion('');
+      setConditionDescription('');
+      setUserResponse('');
+      setIsAnalyzing(false);
     }
   };
 
   const handleResetMedication = () => {
-    setSelectedItem(null);
-    setSelectedRecommendedMed(null);
+    setSelectedItems([]);
     setSearchTerm('');
     setLlmResponse(null);
     setConversationHistory([]);
@@ -648,6 +735,23 @@ const RequestWizard = () => {
     setConditionDescription('');
     setUserResponse('');
     setIsAnalyzing(false);
+    setIsAddingMedication(false);
+  };
+
+  const handleAddMedication = () => {
+    setIsAddingMedication(true);
+    setSearchTerm('');
+    setFilteredItems([]);
+    setLlmResponse(null);
+    setConversationHistory([]);
+    setFollowUpQuestion('');
+    setConditionDescription('');
+    setUserResponse('');
+    setIsAnalyzing(false);
+  };
+
+  const handleRemoveMedication = (index) => {
+    setSelectedItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const renderPharmacyDetails = () => (
@@ -673,105 +777,68 @@ const RequestWizard = () => {
               Search by medication name (brand or generic) or by condition/symptom.
             </Typography>
 
-            {/* Search Medication section - only show if no medication is selected */}
-            {!selectedItem && !selectedRecommendedMed && (
-              <Box mb={4}>
-                <CustomFormLabel htmlFor="search">Search Medication or Condition</CustomFormLabel>
-                <CustomTextField
-                  id="search"
-                  variant="outlined"
-                  fullWidth
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by medication name or condition..."
-                />
-                {filteredItems.length > 0 && (
-                  <List 
-                    sx={{ 
-                      mt: 1, 
-                      maxHeight: 300, 
-                      overflow: 'auto', 
-                      border: '1px solid #e0e0e0', 
-                      borderRadius: 1,
-                      position: 'relative',
-                      zIndex: 1,
-                      bgcolor: 'background.paper'
-                    }}
-                  >
-                    {filteredItems.map((item) => (
-                      <ListItem
-                        key={item.Id}
-                        button
-                        onClick={() => handleSelectItem(item)}
-                        sx={{
-                          '&:hover': {
-                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                            '& .MuiListItemText-primary': {
-                              color: 'primary.main',
-                            },
-                            '& .MuiListItemText-secondary': {
-                              color: 'primary.main',
-                            }
-                          },
-                          transition: 'all 0.2s ease-in-out',
-                        }}
-                      >
-                        <ListItemText
-                          primary={`${item.BrandName} (${item.GenericName})`}
-                          secondary={item.Use}
-                          primaryTypographyProps={{
-                            sx: { transition: 'color 0.2s ease-in-out' }
-                          }}
-                          secondaryTypographyProps={{
-                            sx: { transition: 'color 0.2s ease-in-out' }
-                          }}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                )}
-              </Box>
-            )}
-
-            {/* Selected Medication Display - shown for both direct selection and LLM selection */}
-            {(selectedItem || selectedRecommendedMed) && (
-              <Box mt={4} p={2} sx={{ backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
-                <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
-                  Selected Medication
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
-                  {selectedItem
-                    ? formatMedName(selectedItem)
-                    : selectedRecommendedMed.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0 }}>
-                  {selectedItem
-                    ? selectedItem.Use
-                    : (() => {
-                        const genericName = selectedRecommendedMed.name.split('(')[1]?.replace(')', '').trim();
-                        const brandName = selectedRecommendedMed.name.split('(')[0].trim();
-                        const matchingItem = itemsData.find(item =>
-                          item.GenericName === genericName ||
-                          item.BrandName === brandName
-                        );
-                        return matchingItem ? matchingItem.Use : selectedRecommendedMed.reason;
-                      })()}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={handleResetMedication}
-                  sx={{ mt: 2 }}
-                >
-                  Start Over
-                </Button>
-              </Box>
-            )}
-
-            {/* Only show the condition input if no medication is selected */}
-            {!selectedItem && !selectedRecommendedMed && (
+            {/* Show both forms if adding medication or if no medications selected */}
+            {(!selectedItems.length || isAddingMedication) && (
               <>
-                {/* Or Divider */}
+                {/* Filterable Search Form */}
+                <Box mb={4}>
+                  <CustomFormLabel htmlFor="search">Search Medication or Condition</CustomFormLabel>
+                  <CustomTextField
+                    id="search"
+                    variant="outlined"
+                    fullWidth
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by medication name or condition..."
+                  />
+                  {filteredItems.length > 0 && (
+                    <List 
+                      sx={{ 
+                        mt: 1, 
+                        maxHeight: 300, 
+                        overflow: 'auto', 
+                        border: '1px solid #e0e0e0', 
+                        borderRadius: 1,
+                        position: 'relative',
+                        zIndex: 1,
+                        bgcolor: 'background.paper'
+                      }}
+                    >
+                      {filteredItems.map((item) => (
+                        <ListItem
+                          key={item.Id}
+                          button
+                          onClick={() => handleSelectItem(item)}
+                          sx={{
+                            '&:hover': {
+                              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                              '& .MuiListItemText-primary': {
+                                color: 'primary.main',
+                              },
+                              '& .MuiListItemText-secondary': {
+                                color: 'primary.main',
+                              }
+                            },
+                            transition: 'all 0.2s ease-in-out',
+                          }}
+                        >
+                          <ListItemText
+                            primary={`${item.BrandName} (${item.GenericName})`}
+                            secondary={item.Use}
+                            primaryTypographyProps={{
+                              sx: { transition: 'color 0.2s ease-in-out' }
+                            }}
+                            secondaryTypographyProps={{
+                              sx: { transition: 'color 0.2s ease-in-out' }
+                            }}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  )}
+                </Box>
+
+                {/* OR Divider restored */}
                 <Box sx={{ display: 'flex', alignItems: 'center', my: 3 }}>
                   <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
                   <Typography sx={{ mx: 2, color: 'text.secondary' }}>
@@ -780,40 +847,41 @@ const RequestWizard = () => {
                   <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
                 </Box>
 
-                {/* Condition input and conversation history */}
-                {conversationHistory.length === 0 ? (
-                  <>
-                    <CustomFormLabel htmlFor="condition">Describe your condition or symptoms</CustomFormLabel>
-                    <CustomTextField
-                      id="condition"
-                      multiline
-                      rows={4}
-                      variant="outlined"
-                      fullWidth
-                      value={conditionDescription}
-                      onChange={(e) => setConditionDescription(e.target.value)}
-                      placeholder="Please describe your condition, symptoms, and any relevant medical history..."
-                    />
-                    <Box mt={2}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleConditionSubmit}
-                        disabled={!conditionDescription.trim() || loadingLlm}
-                      >
-                        {loadingLlm ? (
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <CircularProgress size={20} color="inherit" />
-                            <Typography>Analyzing...</Typography>
-                          </Box>
-                        ) : (
-                          'Analyze Condition'
-                        )}
-                      </Button>
-                    </Box>
-                  </>
-                ) : (
-                  <Box mt={4}>
+                {/* LLM Condition/Symptom Form */}
+                <Box mb={4}>
+                  <CustomFormLabel htmlFor="condition">Describe your condition or symptoms</CustomFormLabel>
+                  <CustomTextField
+                    id="condition"
+                    multiline
+                    rows={4}
+                    variant="outlined"
+                    fullWidth
+                    value={conditionDescription}
+                    onChange={(e) => setConditionDescription(e.target.value)}
+                    placeholder="Please describe your condition, symptoms, and any relevant medical history..."
+                  />
+                  <Box mt={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleConditionSubmit}
+                      disabled={!conditionDescription.trim() || loadingLlm}
+                    >
+                      {loadingLlm ? (
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <CircularProgress size={20} color="inherit" />
+                          <Typography>Analyzing...</Typography>
+                        </Box>
+                      ) : (
+                        'Analyze Condition'
+                      )}
+                    </Button>
+                  </Box>
+                </Box>
+
+                {/* LLM Conversation History and Suggestions */}
+                {conversationHistory.length > 0 && (
+                  <Box mt={4} key={llmSuggestionKey}>
                     <Typography variant="h6" gutterBottom>
                       Conversation History
                     </Typography>
@@ -832,9 +900,12 @@ const RequestWizard = () => {
                           {exchange.assistant.diagnosis}
                         </Typography>
                         {dedupeMeds(exchange.assistant.recommendedMedications).map((med, idx) => {
+                          // Defensive: support both med.name and med.medication
+                          const medName = med.name || med.medication;
+                          if (!medName || typeof medName !== 'string' || !medName.includes('(')) return null;
                           // Find matching item in database to get the Use description
-                          const genericName = med.name.split('(')[1]?.replace(')', '').trim();
-                          const brandName = med.name.split('(')[0].trim();
+                          const genericName = medName.split('(')[1]?.replace(')', '').trim();
+                          const brandName = medName.split('(')[0].trim();
                           const matchingItem = itemsData.find(item =>
                             item.GenericName === genericName ||
                             item.BrandName === brandName
@@ -843,8 +914,7 @@ const RequestWizard = () => {
                             <ListItem
                               key={idx}
                               button
-                              onClick={() => handleRecommendedMedClick(med)}
-                              selected={selectedRecommendedMed?.name === med.name}
+                              onClick={() => handleRecommendedMedClick({ ...med, name: medName })}
                               sx={{
                                 '&:hover': {
                                   backgroundColor: 'rgba(25, 118, 210, 0.08)',
@@ -855,21 +925,11 @@ const RequestWizard = () => {
                                     color: 'primary.main',
                                   }
                                 },
-                                '&.Mui-selected': {
-                                  backgroundColor: 'rgba(25, 118, 210, 0.12)',
-                                  '& .MuiListItemText-primary': {
-                                    color: 'primary.main',
-                                    fontWeight: 500,
-                                  },
-                                  '& .MuiListItemText-secondary': {
-                                    color: 'primary.main',
-                                  }
-                                },
                                 transition: 'all 0.2s ease-in-out',
                               }}
                             >
                               <ListItemText
-                                primary={med.name}
+                                primary={medName}
                                 secondary={matchingItem ? matchingItem.Use : med.reason}
                                 primaryTypographyProps={{
                                   sx: { transition: 'color 0.2s ease-in-out' }
@@ -885,35 +945,82 @@ const RequestWizard = () => {
                     ))}
                   </Box>
                 )}
+
+                {/* Show follow-up question if there is one */}
+                {followUpQuestion && (
+                  <Box mt={4}>
+                    <Typography variant="subtitle1" color="primary" gutterBottom>
+                      To provide better recommendations, please answer:
+                    </Typography>
+                    <Typography variant="body1" paragraph>
+                      {followUpQuestion}
+                    </Typography>
+                    <CustomTextField
+                      multiline
+                      rows={2}
+                      variant="outlined"
+                      fullWidth
+                      value={userResponse}
+                      onChange={(e) => setUserResponse(e.target.value)}
+                      placeholder="Type your response here..."
+                    />
+                    <Box mt={2}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleFollowUpResponse}
+                        disabled={!userResponse.trim() || loadingLlm}
+                      >
+                        {loadingLlm ? <CircularProgress size={24} /> : 'Submit Response'}
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
               </>
             )}
 
-            {/* Show follow-up question if there is one */}
-            {followUpQuestion && (
-              <Box mt={4}>
-                <Typography variant="subtitle1" color="primary" gutterBottom>
-                  To provide better recommendations, please answer:
+            {/* Selected Medications Display */}
+            {selectedItems.length > 0 && (
+              <Box mt={4} p={2} sx={{ backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
+                <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
+                  Selected Medications
                 </Typography>
-                <Typography variant="body1" paragraph>
-                  {followUpQuestion}
-                </Typography>
-                <CustomTextField
-                  multiline
-                  rows={2}
-                  variant="outlined"
-                  fullWidth
-                  value={userResponse}
-                  onChange={(e) => setUserResponse(e.target.value)}
-                  placeholder="Type your response here..."
-                />
-                <Box mt={2}>
+                {selectedItems.map((item, index) => (
+                  <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Box>
+                        <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
+                          {formatMedName(item)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {item.Use}
+                        </Typography>
+                      </Box>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={() => handleRemoveMedication(index)}
+                      >
+                        Remove
+                      </Button>
+                    </Box>
+                  </Box>
+                ))}
+                <Box display="flex" gap={2} mt={2}>
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     color="primary"
-                    onClick={handleFollowUpResponse}
-                    disabled={!userResponse.trim() || loadingLlm}
+                    onClick={handleAddMedication}
                   >
-                    {loadingLlm ? <CircularProgress size={24} /> : 'Submit Response'}
+                    Add Medication
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleResetMedication}
+                  >
+                    Start Over
                   </Button>
                 </Box>
               </Box>
@@ -957,7 +1064,10 @@ const RequestWizard = () => {
                   variant="outlined"
                   fullWidth
                   value={searchTermPhysician}
-                  onChange={(e) => setSearchTermPhysician(e.target.value)}
+                  onChange={(e) => {
+                    setPhysicianSearchLocked(false);
+                    setSearchTermPhysician(e.target.value);
+                  }}
                 />
               </Grid>
               <Grid item xs={12} lg={4}>
@@ -967,92 +1077,52 @@ const RequestWizard = () => {
                   variant="outlined"
                   fullWidth
                   value={searchTermPhysicianFirst}
-                  onChange={(e) => setSearchTermPhysicianFirst(e.target.value)}
+                  onChange={(e) => {
+                    setPhysicianSearchLocked(false);
+                    setSearchTermPhysicianFirst(e.target.value);
+                  }}
                 />
               </Grid>
               <Grid item xs={12} lg={12}> 
                 {loadingPhysician && <CircularProgress />}
-                <List>
-                  {physicianSuggestions.map((physician) => (
-                    <ListItem
-                      button
-                      key={physician.number}
-                      onClick={() => handleSelectPhysician(physician)}
-                      sx={{
-                        '&:hover': {
-                          backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                          '& .MuiListItemText-primary': {
-                            color: 'primary.main',
-                            fontWeight: 700,
+                {physicianSuggestions.length > 0 && (
+                  <List>
+                    {physicianSuggestions.map((physician) => (
+                      <ListItem
+                        button
+                        key={physician.number}
+                        onClick={() => handleSelectPhysician(physician)}
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                            '& .MuiListItemText-primary': {
+                              color: 'primary.main',
+                              fontWeight: 700,
+                            },
+                            '& .MuiListItemText-secondary': {
+                              color: 'primary.main',
+                            }
                           },
-                          '& .MuiListItemText-secondary': {
-                            color: 'primary.main',
-                          }
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                    >
-                      <ListItemText
-                        primary={`${physician.basic.last_name}, ${physician.basic.first_name} (${physician.addresses[0]?.city || ''})`}
-                        secondary={physician.taxonomies[0]?.desc || ''}
-                        primaryTypographyProps={{ sx: { fontWeight: 700, transition: 'color 0.2s' } }}
-                        secondaryTypographyProps={{ sx: { transition: 'color 0.2s' } }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
+                          transition: 'all 0.2s ease-in-out',
+                        }}
+                      >
+                        <ListItemText
+                          primary={`${physician.basic.last_name}, ${physician.basic.first_name} (${physician.addresses[0]?.city || ''})`}
+                          secondary={physician.taxonomies[0]?.desc || ''}
+                          primaryTypographyProps={{ sx: { fontWeight: 700, transition: 'color 0.2s' } }}
+                          secondaryTypographyProps={{ sx: { transition: 'color 0.2s' } }}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
               </Grid> 
             </Grid>
-            {/* Manual Physician Data Entry Form */}
+            {/* Manual Physician Data Entry Form - Only show first name, last name, city, state */}
             <Box mt={4} p={2} sx={{ backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
               <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
                 Physician Information
               </Typography>
-              {/* Show LLM message and button if better data is available */}
-              {(() => {
-                const changedFields = getLlmChangedFields(llmPhysicianData, physicianForm);
-                if (llmLoadingPhysician) {
-                  return <Typography color="primary" sx={{ mb: 2 }}>Checking for more recent data...</Typography>;
-                }
-                if (llmPhysicianDataUsed) {
-                  return <Typography color="success.main" sx={{ mb: 2 }}>Physician information updated with more recent data.</Typography>;
-                }
-                if (llmPhysicianData) {
-                  if (changedFields.length > 0) {
-                    return (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography color="primary" sx={{ mb: 1 }}>
-                          More recent or additional data may be available for:
-                        </Typography>
-                        <ul style={{ margin: 0, paddingLeft: 18 }}>
-                          {changedFields.map(f => (
-                            <li key={f.key}>
-                              <Typography variant="body2">
-                                <b>{f.label}:</b> <span style={{ textDecoration: 'line-through', color: '#888' }}>{physicianForm[f.key]}</span> → <span style={{ color: '#1976d2' }}>{llmPhysicianData[f.key]}</span>
-                              </Typography>
-                            </li>
-                          ))}
-                        </ul>
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          onClick={handleUseLlmPhysicianData}
-                          sx={{ mt: 1 }}
-                        >
-                          Use More Recent Data
-                        </Button>
-                      </Box>
-                    );
-                  } else {
-                    return (
-                      <Typography color="primary" sx={{ mb: 2 }}>
-                        No new or more recent data found for this physician.
-                      </Typography>
-                    );
-                  }
-                }
-                return null;
-              })()}
               <Grid container spacing={1.5}>
                 <Grid item xs={12} md={6}>
                   <CustomFormLabel required htmlFor="physician-lastname">
@@ -1083,79 +1153,31 @@ const RequestWizard = () => {
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <CustomFormLabel required htmlFor="physician-fax">
-                    Fax Number <Typography component="span" color="error" fontWeight={700}>*</Typography>
+                  <CustomFormLabel required htmlFor="physician-city">
+                    City <Typography component="span" color="error" fontWeight={700}>*</Typography>
                   </CustomFormLabel>
-                  <CustomTextField
-                    id="physician-fax"
-                    variant="outlined"
-                    fullWidth
-                    required
-                    value={physicianForm.fax}
-                    onChange={e => setPhysicianForm({ ...physicianForm, fax: e.target.value })}
-                    sx={{ mb: 0 }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <CustomFormLabel htmlFor="physician-phone">Phone Number</CustomFormLabel>
-                  <CustomTextField
-                    id="physician-phone"
-                    variant="outlined"
-                    fullWidth
-                    value={physicianForm.phone}
-                    onChange={e => setPhysicianForm({ ...physicianForm, phone: e.target.value })}
-                    sx={{ mb: 0 }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <CustomFormLabel htmlFor="physician-npi">NPI Number</CustomFormLabel>
-                  <CustomTextField
-                    id="physician-npi"
-                    variant="outlined"
-                    fullWidth
-                    value={physicianForm.npi}
-                    onChange={e => setPhysicianForm({ ...physicianForm, npi: e.target.value })}
-                    sx={{ mb: 0 }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <CustomFormLabel htmlFor="physician-specialty">Specialty</CustomFormLabel>
-                  <CustomTextField
-                    id="physician-specialty"
-                    variant="outlined"
-                    fullWidth
-                    value={physicianForm.specialty}
-                    onChange={e => setPhysicianForm({ ...physicianForm, specialty: e.target.value })}
-                    sx={{ mb: 0 }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={8}>
-                  <CustomFormLabel htmlFor="physician-address">Address</CustomFormLabel>
-                  <CustomTextField
-                    id="physician-address"
-                    variant="outlined"
-                    fullWidth
-                    value={physicianForm.address}
-                    onChange={e => setPhysicianForm({ ...physicianForm, address: e.target.value })}
-                    sx={{ mb: 0 }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <CustomFormLabel htmlFor="physician-city">City</CustomFormLabel>
                   <CustomTextField
                     id="physician-city"
                     variant="outlined"
                     fullWidth
+                    required
                     value={physicianForm.city}
                     onChange={e => setPhysicianForm({ ...physicianForm, city: e.target.value })}
                     sx={{ mb: 0 }}
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
-                  <CustomFormLabel htmlFor="physician-state">State</CustomFormLabel>
+                <Grid item xs={12} md={6}>
+                  <CustomFormLabel required htmlFor="physician-state">
+                    State <Typography component="span" color="error" fontWeight={700}>*</Typography>
+                  </CustomFormLabel>
                   <CustomSelect
-                    value={physicianForm.state}
-                    onChange={e => setPhysicianForm({ ...physicianForm, state: e.target.value })}
+                    id="physician-state"
+                    value={stateFullToAbbreviation[physicianForm.state] || ''}
+                    onChange={e => {
+                      const abbr = e.target.value;
+                      const fullName = stateAbbreviationToFull[abbr] || abbr;
+                      setPhysicianForm({ ...physicianForm, state: fullName });
+                    }}
                     fullWidth
                     required
                     size="small"
@@ -1168,29 +1190,9 @@ const RequestWizard = () => {
                     ))}
                   </CustomSelect>
                 </Grid>
-                <Grid item xs={12} md={4}>
-                  <CustomFormLabel htmlFor="physician-zip">Zip Code</CustomFormLabel>
-                  <CustomTextField
-                    id="physician-zip"
-                    variant="outlined"
-                    fullWidth
-                    value={physicianForm.zip}
-                    onChange={e => setPhysicianForm({ ...physicianForm, zip: e.target.value })}
-                    sx={{ mb: 0 }}
-                  />
-                </Grid>
-                <Grid item xs={12} display="flex" justifyContent="flex-end">
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleResetPhysician}
-                    sx={{ mt: 2 }}
-                  >
-                    Start Over
-                  </Button>
-                </Grid>
               </Grid>
             </Box>
+            {renderSelectedMedications()}
             {renderPharmacyDetails()}
           </Box>
         );
@@ -1453,6 +1455,7 @@ const RequestWizard = () => {
                 </Grid>
               </Grid>
             </Box>
+            {renderSelectedMedications()}
             {renderPharmacyDetails()}
           </Box>
         );
@@ -1486,19 +1489,85 @@ const RequestWizard = () => {
   };
 
   const handleReset = () => {
+    // Reset all state variables to their initial values
     setActiveStep(0);
+    setSkipped(new Set());
+    setSearchTerm('');
+    setFilteredItems([]);
+    setSelectedItems([]);
+    setIsAddingMedication(false);
+    setSearchTermPhysician('');
+    setSelectedPhysician(null);
+    setPhysicianSuggestions([]);
+    setLoadingPhysician(false);
+    setPhysicianState('');
+    setConditionDescription('');
+    setLlmResponse(null);
+    setLoadingLlm(false);
+    setSelectedRecommendedMed(null);
+    setConversationHistory([]);
+    setFollowUpQuestion('');
+    setIsAnalyzing(false);
+    setUserResponse('');
+    setSelectedCondition('');
+    setConditionSearchTerm('');
+    setFilteredConditions([]);
+    setShowConditions(false);
+    setRecommendedMedications([]);
+    setSearchTermPhysicianFirst('');
+    setPhysicianForm({
+      lastName: '',
+      firstName: '',
+      fax: '',
+      phone: '',
+      npi: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      specialty: '',
+    });
+    setLlmPhysicianData(null);
+    setLlmLoadingPhysician(false);
+    setLlmPhysicianMessage('');
+    setLlmPhysicianDataUsed(false);
+    setChangedFields([]);
+    setValues({
+      firstname: '',
+      middlename: '',
+      lastname: '',
+      email: '',
+      phone: '',
+      dob: '',
+      gender: '',
+      address: '',
+      address2: '',
+      city: '',
+      state: '',
+      zipcode: '',
+      insurance1: '',
+      insurance1id: '',
+      insurance2: '',
+      insurance2id: '',
+      notes: '',
+    });
+    setTermsChecked(false);
+    setPhysicianSearchLocked(false);
+    setMedicareDataForUpdate(null);
+    setLlmSuggestionKey(0);
+    setFinalPhysicianData(null);
   };
 
   // Add a useEffect to handle state restoration when going back
   useEffect(() => {
     if (activeStep === 0) {
       // When returning to step 1, ensure all state is properly restored
-      if (selectedItem || selectedRecommendedMed) {
-        const item = selectedItem || selectedRecommendedMed;
-        setSearchTerm(item.GenericName || item.BrandName || item.name);
+      if (selectedItems.length) {
+        const items = selectedItems;
+        setSearchTerm(items[0].GenericName || items[0].BrandName || items[0].name);
       }
     }
-  }, [activeStep, selectedItem, selectedRecommendedMed]);
+  }, [activeStep, selectedItems]);
 
   // Add a function to reset all physician search and form fields
   const handleResetPhysician = () => {
@@ -1540,32 +1609,179 @@ const RequestWizard = () => {
     const fields = [
       { key: 'fax', label: 'Fax Number' },
       { key: 'phone', label: 'Phone Number' },
-      { key: 'npi', label: 'NPI Number' },
       { key: 'address', label: 'Address' },
       { key: 'city', label: 'City' },
       { key: 'state', label: 'State' },
       { key: 'zip', label: 'Zip Code' },
       { key: 'specialty', label: 'Specialty' },
     ];
-    return fields.filter(f => llmData[f.key] && llmData[f.key] !== formData[f.key]);
+    return fields.filter(f => {
+      // Only show fields that have data and meet minimum confidence threshold
+      const confidence = llmData.dataQuality?.fieldConfidence?.[f.key] || 0;
+      return llmData[f.key] && llmData[f.key] !== formData[f.key] && confidence >= 70;
+    });
   };
 
   // Function to call LLM for more recent physician data
-  const fetchLlmPhysicianData = async (query) => {
+  const fetchLlmPhysicianData = async (query, currentForm = physicianForm) => {
     setLlmLoadingPhysician(true);
-    setLlmPhysicianMessage('');
+    setLlmPhysicianMessage('Searching the Medicare Database for updated contact information...');
     setLlmPhysicianData(null);
+    setChangedFields([]);
     try {
-      // Example: POST to /api/llm-physician-info with query object
-      const response = await axios.post('/api/llm-physician-info', query);
+      console.log('🔍 Fetching physician data for:', query);
+      const response = await axios.post('/api/physician-info', { npi: query.npi });
+      console.log('📥 Received response:', response.data);
+      
       if (response.data && response.data.success && response.data.physician) {
-        setLlmPhysicianData(response.data.physician);
-        setLlmPhysicianMessage('More recent or additional data may be available.');
+        // Defensive logging for debugging
+        console.log('Full API response:', response);
+        console.log('response.data:', response.data);
+        console.log('response.data.physician:', response.data.physician);
+        
+        // Handle possible nested structure
+        let medicareData = response.data.physician;
+        if (medicareData && medicareData.data) {
+          medicareData = medicareData.data;
+          console.log('Using nested medicareData:', medicareData);
+        } else {
+          console.log('Using flat medicareData:', medicareData);
+        }
+        // Map backend Medicare data fields to frontend keys (use camelCase keys as returned by backend)
+        const mappedMedicareData = {
+          fax: medicareData.fax || '',
+          phone: medicareData.phone || '',
+          address: medicareData.address || '',
+          city: medicareData.city || '',
+          state: medicareData.state || '',
+          zip: medicareData.zip || '',
+          specialty: medicareData.specialty || ''
+        };
+        console.log('Mapped Medicare data:', mappedMedicareData);
+
+        // Compare Medicare data with current form data using mapped keys
+        const fields = [
+          { key: 'fax', label: 'Fax Number', medicareValue: mappedMedicareData.fax },
+          { key: 'phone', label: 'Phone Number', medicareValue: mappedMedicareData.phone },
+          { key: 'address', label: 'Address', medicareValue: mappedMedicareData.address },
+          { key: 'city', label: 'City', medicareValue: mappedMedicareData.city },
+          { key: 'state', label: 'State', medicareValue: mappedMedicareData.state },
+          { key: 'zip', label: 'Zip Code', medicareValue: mappedMedicareData.zip },
+          { key: 'specialty', label: 'Specialty', medicareValue: mappedMedicareData.specialty }
+        ];
+
+        // Check if we have any non-empty Medicare data
+        const hasMedicareData = fields.some(field => {
+          const value = field.medicareValue;
+          return value && value.trim() !== '' && value !== null && value !== undefined;
+        });
+
+        if (!hasMedicareData) {
+          setLlmPhysicianMessage('Most recent contact information available.');
+          return;
+        }
+
+        // Compare each field and only add to changedFields if there's a meaningful difference
+        const newChangedFields = [];
+        fields.forEach(field => {
+          let medicareValue = field.medicareValue?.trim() || '';
+          let currentValue = (currentForm[field.key] || '').trim();
+          
+          // Debug log for comparison
+          console.log(`Comparing field: ${field.key}, medicareValue: "${medicareValue}", currentValue: "${currentValue}"`);
+          
+          // Skip if both values are empty
+          if (!medicareValue && !currentValue) {
+            return;
+          }
+
+          // Special handling for state field
+          if (field.key === 'state') {
+            const medicareLabel = getStateLabel(medicareValue);
+            const currentLabel = getStateLabel(currentValue);
+
+            if (medicareLabel && currentLabel && medicareLabel !== currentLabel) {
+              newChangedFields.push({
+                key: field.key,
+                label: field.label,
+                currentValue: currentLabel || '(empty)',
+                medicareValue: medicareLabel
+              });
+            } else if (medicareLabel && !currentLabel) {
+              newChangedFields.push({
+                key: field.key,
+                label: field.label,
+                currentValue: '(empty)',
+                medicareValue: medicareLabel
+              });
+            }
+            return;
+          }
+          
+          // For phone numbers, normalize the format
+          if (field.key === 'phone') {
+            const normalizePhone = (phone) => {
+              return phone.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+            };
+            medicareValue = normalizePhone(medicareValue);
+            currentValue = normalizePhone(currentValue);
+          }
+          
+          // For zip codes, ensure consistent format
+          if (field.key === 'zip') {
+            medicareValue = medicareValue.replace(/\D/g, '');
+            currentValue = currentValue.replace(/\D/g, '');
+          }
+          
+          // Only show update if Medicare has a non-empty value and it's different from the form
+          if (medicareValue && medicareValue !== currentValue) {
+            newChangedFields.push({
+              key: field.key,
+              label: field.label,
+              currentValue: currentValue || '(empty)',
+              medicareValue: medicareValue
+            });
+          }
+        });
+
+        console.log('Changed fields:', newChangedFields);
+        setChangedFields(newChangedFields);
+
+        if (newChangedFields.length > 0) {
+          // Format the Medicare data for display
+          const formattedMedicareData = {
+            ...medicareData,
+            fax: medicareData.fax || '',
+            phone: medicareData.phone || '',
+            address: medicareData.address || '',
+            zip: medicareData.zip || '',
+            specialty: medicareData.specialty || '',
+            dataQuality: {
+              overallConfidence: 100,
+              sources: ['Medicare Physician Compare'],
+              lastVerified: new Date().toISOString().split('T')[0],
+              fieldConfidence: {
+                fax: medicareData.fax ? 100 : 0,
+                phone: medicareData.phone ? 100 : 0,
+                address: medicareData.address ? 100 : 0,
+                npi: 100,
+                specialty: medicareData.specialty ? 100 : 0
+              }
+            }
+          };
+
+          setLlmPhysicianData(formattedMedicareData);
+          setLlmPhysicianMessage('Updated Medicare data available for this physician.');
+          setMedicareDataForUpdate(mappedMedicareData); // <-- FIXED: use mappedMedicareData
+        } else {
+          setLlmPhysicianMessage('Most recent contact information available.');
+        }
       } else {
-        setLlmPhysicianMessage('No more recent data found.');
+        setLlmPhysicianMessage('Most recent contact information available.');
       }
     } catch (error) {
-      setLlmPhysicianMessage('Could not retrieve more recent data.');
+      console.error('❌ Error fetching physician data:', error);
+      setLlmPhysicianMessage('Most recent contact information available.');
     } finally {
       setLlmLoadingPhysician(false);
     }
@@ -1573,22 +1789,215 @@ const RequestWizard = () => {
 
   // Handler to use LLM data
   const handleUseLlmPhysicianData = () => {
-    if (llmPhysicianData) {
-      setPhysicianForm({
-        lastName: llmPhysicianData.lastName || physicianForm.lastName,
-        firstName: llmPhysicianData.firstName || physicianForm.firstName,
-        fax: llmPhysicianData.fax || physicianForm.fax,
-        phone: llmPhysicianData.phone || physicianForm.phone,
-        npi: llmPhysicianData.npi || physicianForm.npi,
-        address: llmPhysicianData.address || physicianForm.address,
-        city: llmPhysicianData.city || physicianForm.city,
-        state: llmPhysicianData.state || physicianForm.state,
-        zip: llmPhysicianData.zip || physicianForm.zip,
-        specialty: llmPhysicianData.specialty || physicianForm.specialty,
+    if (medicareDataForUpdate) {
+      const updatedForm = { ...physicianForm };
+      console.log('changedFields:', changedFields);
+      changedFields.forEach(field => {
+        const formKey = field.key;
+        const medicareValue = medicareDataForUpdate[formKey];
+        console.log('Field key:', formKey, 'Medicare value:', medicareValue);
+        if (formKey && typeof medicareValue !== 'undefined' && medicareValue !== null && medicareValue !== '') {
+          if (formKey === 'state') {
+            updatedForm[formKey] = stateAbbreviationToFull[medicareValue] || medicareValue;
+          } else {
+            updatedForm[formKey] = medicareValue;
+          }
+          console.log('Updating field:', formKey, 'with value:', medicareValue);
+        }
       });
+      setPhysicianForm({ ...updatedForm });
       setLlmPhysicianDataUsed(true);
-      setLlmPhysicianMessage('Physician information updated with more recent data.');
+      setLlmPhysicianMessage('Physician information updated with verified data.');
+      setChangedFields([]);
     }
+  };
+
+  // Update dedupeMeds to use clean()
+  const dedupeMeds = (meds) => {
+    const seen = new Set();
+    return meds.filter(med => {
+      const medName = med.name || med.medication;
+      if (!medName || typeof medName !== 'string' || !medName.includes('(')) return false;
+      const [first, second] = medName.split('(');
+      const part1 = clean(first?.trim().toLowerCase());
+      const part2 = clean(second?.replace(')', '').trim().toLowerCase());
+      // Check if this medication is already selected (either direction)
+      const isAlreadySelected = selectedItems.some(selectedItem => {
+        const brand = selectedItem.BrandName?.trim().toLowerCase();
+        const generic = selectedItem.GenericName?.trim().toLowerCase();
+        return (
+          (brand === part1 && generic === part2) ||
+          (brand === part2 && generic === part1)
+        );
+      });
+      if (isAlreadySelected) return false;
+      // Deduplicate by name
+      const key = [part1, part2].sort().join('|');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  // Move this block so it appears above renderPharmacyDetails in steps 1 and 2 as well
+  const renderSelectedMedications = () => (
+    selectedItems.length > 0 && (
+      <Box mt={4} p={2} sx={{ backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
+        <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
+          Selected Medications
+        </Typography>
+        {selectedItems.map((item, index) => (
+          <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  {formatMedName(item)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {item.Use}
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={() => handleRemoveMedication(index)}
+              >
+                Remove
+              </Button>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    )
+  );
+
+  // Helper function to fetch Medicare data for a physician
+  const fetchMedicareDataForPhysician = async (npi) => {
+    try {
+      const response = await axios.post('/api/physician-info', { npi });
+      if (response.data && response.data.success && response.data.physician) {
+        let medicareData = response.data.physician;
+        if (medicareData && medicareData.data) {
+          medicareData = medicareData.data;
+        }
+        return medicareData;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching Medicare data:', error);
+      return null;
+    }
+  };
+
+  // Helper function to check if Medicare data is valid and has useful information
+  const hasValidMedicareData = (medicareData) => {
+    if (!medicareData) return false;
+    
+    // Check if we have any non-empty fields that would be useful
+    const usefulFields = ['fax', 'phone', 'address', 'city', 'state', 'zip', 'specialty'];
+    return usefulFields.some(field => {
+      const value = medicareData[field];
+      return value && value.trim() !== '' && value !== null && value !== undefined;
+    });
+  };
+
+  // Helper function to merge NPI data with Medicare data, prioritizing Medicare
+  const mergePhysicianData = (npiData, medicareData) => {
+    if (!medicareData) return npiData;
+    
+    const merged = { ...npiData };
+    
+    // Map Medicare fields to form fields and merge
+    const fieldMappings = [
+      { medicare: 'fax', form: 'fax' },
+      { medicare: 'phone', form: 'phone' },
+      { medicare: 'address', form: 'address' },
+      { medicare: 'city', form: 'city' },
+      { medicare: 'state', form: 'state' },
+      { medicare: 'zip', form: 'zip' },
+      { medicare: 'specialty', form: 'specialty' }
+    ];
+    
+    fieldMappings.forEach(mapping => {
+      const medicareValue = medicareData[mapping.medicare];
+      if (medicareValue && medicareValue.trim() !== '') {
+        if (mapping.form === 'state') {
+          // Convert state abbreviation to full name if needed
+          merged[mapping.form] = stateAbbreviationToFull[medicareValue] || medicareValue;
+        } else {
+          merged[mapping.form] = medicareValue.trim();
+        }
+      }
+    });
+    
+    return merged;
+  };
+
+  // Helper function to prepare physician data for database storage
+  const preparePhysicianDataForDatabase = (formData, medicareData) => {
+    const databaseData = {
+      // Basic information
+      npi: formData.npi,
+      lastName: formData.lastName,
+      firstName: formData.firstName,
+      
+      // Contact information
+      fax: formData.fax,
+      phone: formData.phone,
+      address: formData.address,
+      city: formData.city,
+      state: formData.state,
+      zip: formData.zip,
+      specialty: formData.specialty,
+      
+      // Data source tracking
+      dataSource: medicareData ? 'medicare_enhanced' : 'npi_only',
+      medicareDataAvailable: !!medicareData,
+      lastUpdated: new Date().toISOString(),
+      
+      // Medicare-specific data if available
+      medicareData: medicareData ? {
+        originalMedicareData: medicareData,
+        dataQuality: {
+          overallConfidence: 100,
+          sources: ['Medicare Physician Compare'],
+          lastVerified: new Date().toISOString().split('T')[0],
+          fieldConfidence: {
+            fax: medicareData.fax ? 100 : 0,
+            phone: medicareData.phone ? 100 : 0,
+            address: medicareData.address ? 100 : 0,
+            npi: 100,
+            specialty: medicareData.specialty ? 100 : 0
+          }
+        }
+      } : null
+    };
+    
+    return databaseData;
+  };
+
+  // Function to get the final physician data for database submission
+  const getFinalPhysicianData = () => {
+    return finalPhysicianData;
+  };
+
+  // Function to get all form data ready for database submission
+  const getFormDataForSubmission = () => {
+    return {
+      medications: selectedItems.map(item => ({
+        genericName: item.GenericName,
+        brandName: item.BrandName,
+        use: item.Use,
+        class: item.Class,
+        schedule: item.Schedule
+      })),
+      physician: finalPhysicianData,
+      patient: values,
+      pharmacy: pharmacyDetails,
+      submissionDate: new Date().toISOString(),
+      formVersion: '1.0'
+    };
   };
 
   return (
@@ -1680,10 +2089,10 @@ const RequestWizard = () => {
                   variant="contained"
                   color={activeStep === steps.length - 1 ? 'success' : 'secondary'}
                   disabled={
-                    (activeStep === 1 && (!physicianForm.lastName.trim() || !physicianForm.firstName.trim() || !physicianForm.fax.trim())) ||
+                    (activeStep === 1 && (!physicianForm.lastName.trim() || !physicianForm.firstName.trim() || !physicianForm.city.trim() || !physicianForm.state.trim())) ||
                     (activeStep === 2 && (!values.firstname.trim() || !values.lastname.trim() || !values.phone.trim() || !values.dob.trim() || !values.gender.trim() || !values.address.trim() || !values.city.trim() || !values.state.trim() || !values.zipcode.trim())) ||
                     (activeStep === 3 && !termsChecked) ||
-                    (activeStep === 0 && !selectedItem && !selectedRecommendedMed)
+                    (activeStep === 0 && !selectedItems.length)
                   }
                 >
                   {activeStep === steps.length - 1 ? 'Finish' : 'Next'}

@@ -25,63 +25,65 @@ router.post('/analyze', async (req, res) => {
       ).join('\n\n');
     }
 
-    const prompt = `As a medical professional, analyze the following patient condition and recommend appropriate medications from the provided list. 
-    Consider medical guidelines, contraindications, and best practices.
-
-    ${conversationContext ? `Previous conversation:\n${conversationContext}\n\n` : ''}
-    Current Patient Condition: ${condition}
-
-    Available Medications:
-    ${medications.map(med => `- ${med.BrandName || med.GenericName} (Generic: ${med.GenericName})`).join('\n')}
-
-    INSTRUCTIONS:
-    1. For vague symptoms (like "itchy", "pain", "discomfort"), ask ONE focused follow-up question.
-    2. Structure your follow-up questions in this order:
-       - First question: Ask about location (e.g., "Where exactly are you experiencing the pain?")
-       - Second question: Ask about characteristics (e.g., "What type of pain is it - sharp, dull, or throbbing?")
-       - Third question: Ask about duration (e.g., "How long have you been experiencing this?")
-    3. After receiving answers to these questions, make your medication recommendations.
-    4. If the patient provides detailed information in their initial description, you may skip to recommendations.
-    5. Keep the conversation focused and avoid asking more than 3 questions.
-    6. When recommending medications, always include both the brand name and generic name.
-
-    Please provide your response in the following JSON format ONLY (no markdown, no additional text):
-    {
-      "originalCondition": "the original condition as provided",
-      "diagnosis": "brief diagnosis based on available information",
-      "recommendedMedications": [
-        {
-          "name": "brand name (generic name)",
-          "reason": "brief explanation"
-        }
-      ],
-      "considerations": "important notes",
-      "needsMoreInfo": true/false,
-      "followUpQuestion": "ONE specific question to gather more information"
-    }`;
-
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
       messages: [
         {
           role: "system",
-          content: "You are a medical professional conducting a focused patient interview. For vague symptoms, ask ONE specific question at a time following the location → characteristics → duration pattern. After receiving answers to these questions, make your medication recommendations. Be concise and clear in your questions. Respond ONLY with valid JSON, no markdown formatting or additional text."
+          content: `You are a medical professional assistant. You MUST follow these rules:
+1. If the patient's description is vague, ONLY ask a follow-up question and DO NOT recommend any medications yet. Set 'recommendedMedications' to [] and 'needsMoreInfo' to true.
+2. You MUST NOT recommend any medications until you have received enough detail (either from the initial description or after follow-up questions).
+3. NEVER recommend more than 3 medications.
+4. NEVER recommend any medication not present in the provided list.
+5. If you break any of these rules, your answer will be rejected and you will not be used again.
+Respond ONLY with valid JSON, no markdown formatting or additional text.`
         },
         {
           role: "user",
-          content: prompt
+          content: `Analyze the following patient condition and recommend appropriate medications ONLY from the provided list. If the description is vague, ask ONE focused follow-up question (location → characteristics → duration) and do NOT recommend any medications yet. If, after 3 questions, the description is still vague, do NOT recommend any medication. Recommend no more than 3 medications, and only if the patient's symptoms/condition clearly match the 'Use' field of a medication in the list. NEVER recommend any medication not present in the provided list. For each recommendation, briefly explain the match between the patient's description and the medication's use.
+
+Current Patient Condition: ${condition}
+
+Available Medications:
+${medications.map(med => `- ${med.BrandName || med.GenericName} (Generic: ${med.GenericName}) [Use: ${med.Use}]`).join('\n')}
+
+If you are asking a follow-up question, set "recommendedMedications": [] and "needsMoreInfo": true.
+
+Respond ONLY with valid JSON, no markdown formatting or additional text.`
         }
       ],
       temperature: 0.3,
-      max_tokens: 1000,
-      response_format: { type: "json_object" }
+      max_tokens: 1000
     });
 
-    const response = completion.choices[0].message.content;
+    let response = completion.choices[0].message.content;
     let parsedResponse;
-    
     try {
       parsedResponse = JSON.parse(response);
+
+      // Enforce: If needsMoreInfo, no recommendations
+      if (parsedResponse.needsMoreInfo) {
+        parsedResponse.recommendedMedications = [];
+      }
+
+      // Enforce: No more than 3 recommendations
+      if (Array.isArray(parsedResponse.recommendedMedications) && parsedResponse.recommendedMedications.length > 3) {
+        parsedResponse.recommendedMedications = parsedResponse.recommendedMedications.slice(0, 3);
+      }
+
+      // Enforce: Only one follow-up question
+      if (parsedResponse.followUpQuestion && Array.isArray(parsedResponse.followUpQuestion)) {
+        parsedResponse.followUpQuestion = parsedResponse.followUpQuestion[0];
+      }
+
+      // If conversationHistory shows >3 follow-ups, return a message instead
+      if (conversationHistory && conversationHistory.length >= 3 && parsedResponse.needsMoreInfo) {
+        parsedResponse.recommendedMedications = [];
+        parsedResponse.needsMoreInfo = false;
+        parsedResponse.followUpQuestion = '';
+        parsedResponse.diagnosis = 'More detail is needed to make a safe recommendation. Please consult a healthcare provider.';
+      }
+
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', response);
       throw new Error('Invalid response format from AI service');
