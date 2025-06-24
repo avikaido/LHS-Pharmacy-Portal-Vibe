@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
-import { List } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { List, Box, Switch, FormControlLabel, Typography } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   SelectPharmacist,
   fetchPharmacists,
-  DeletePharmacist,
-  toggleStarredPharmacist,
+  fetchArchivedPharmacists,
+  deletePharmacist,
 } from '../../../store/apps/pharmacists/PharmacistSlice';
 
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
@@ -13,15 +13,28 @@ import PharmacistListItem from './PharmacistListItem';
 
 const PharmacistList = ({ showrightSidebar }) => {
   const dispatch = useDispatch();
+  const [showArchived, setShowArchived] = useState(false);
+
   useEffect(() => {
-    dispatch(fetchPharmacists());
-  }, [dispatch]);
+    if (showArchived) {
+      dispatch(fetchArchivedPharmacists());
+    } else {
+      dispatch(fetchPharmacists());
+    }
+  }, [dispatch, showArchived]);
 
   const getVisiblePharmacists = (pharmacists, filter, pharmacistSearch) => {
+    // If showing archived, only show archived pharmacists and ignore department filters
+    if (showArchived) {
+      return pharmacists.filter(
+        (c) => c.deleted && c.firstname.toLowerCase().includes(pharmacistSearch.toLowerCase()),
+      );
+    }
+
     switch (filter) {
       case 'show_all':
         return pharmacists.filter(
-          (c) => !c.deleted && c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
+          (c) => !c.deleted && c.firstname.toLowerCase().includes(pharmacistSearch.toLowerCase()),
         );
 
       case 'frequent_pharmacist':
@@ -29,12 +42,12 @@ const PharmacistList = ({ showrightSidebar }) => {
           (c) =>
             !c.deleted &&
             c.frequentlycontacted &&
-            c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
+            c.firstname.toLowerCase().includes(pharmacistSearch.toLowerCase()),
         );
 
       case 'starred_pharmacist':
         return pharmacists.filter(
-          (c) => !c.deleted && c.starred && c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
+          (c) => !c.deleted && c.starred && c.firstname.toLowerCase().includes(pharmacistSearch.toLowerCase()),
         );
 
       case 'retail_pharmacy':
@@ -42,7 +55,7 @@ const PharmacistList = ({ showrightSidebar }) => {
           (c) =>
             !c.deleted &&
             c.department === 'Retail Pharmacy' &&
-            c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
+            c.firstname.toLowerCase().includes(pharmacistSearch.toLowerCase()),
         );
 
       case 'compounding_pharmacy':
@@ -50,7 +63,7 @@ const PharmacistList = ({ showrightSidebar }) => {
           (c) =>
             !c.deleted &&
             c.department === 'Compounding Pharmacy' &&
-            c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
+            c.firstname.toLowerCase().includes(pharmacistSearch.toLowerCase()),
         );
 
       case 'clinical_pharmacy':
@@ -58,7 +71,7 @@ const PharmacistList = ({ showrightSidebar }) => {
           (c) =>
             !c.deleted &&
             c.department === 'Clinical Pharmacy' &&
-            c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
+            c.firstname.toLowerCase().includes(pharmacistSearch.toLowerCase()),
         );
 
       case 'hospital_pharmacy':
@@ -66,7 +79,7 @@ const PharmacistList = ({ showrightSidebar }) => {
           (c) =>
             !c.deleted &&
             c.department === 'Hospital Pharmacy' &&
-            c.firstname.toLocaleLowerCase().includes(pharmacistSearch),
+            c.firstname.toLowerCase().includes(pharmacistSearch.toLowerCase()),
         );
 
       default:
@@ -82,25 +95,56 @@ const PharmacistList = ({ showrightSidebar }) => {
   );
 
   const active = useSelector((state) => state.pharmacistsReducer.pharmacistContent);
+  const loading = useSelector((state) => state.pharmacistsReducer.loading);
+  const error = useSelector((state) => state.pharmacistsReducer.error);
+
+  // Debug logging
+  console.log('PharmacistList Debug:', {
+    showArchived,
+    totalPharmacists: pharmacists.length,
+    pharmacists: pharmacists.map(p => ({ id: p.id, name: `${p.firstname} ${p.lastname}`, deleted: p.deleted })),
+    loading,
+    error
+  });
+
+  if (loading) return <div>Loading pharmacists...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <List>
-      <Scrollbar sx={{ height: { lg: 'calc(100vh - 100px)', md: '100vh' }, maxHeight: '800px' }}>
-        {pharmacists.map((pharmacist) => (
-          <PharmacistListItem
-            key={pharmacist.id}
-            active={pharmacist.id === active}
-            {...pharmacist}
-            onPharmacistClick={() => {
-              dispatch(SelectPharmacist(pharmacist.id));
-              showrightSidebar();
-            }}
-            onDeleteClick={() => dispatch(DeletePharmacist(pharmacist.id))}
-            onStarredClick={() => dispatch(toggleStarredPharmacist(pharmacist.id))}
-          />
-        ))}
-      </Scrollbar>
-    </List>
+    <>
+      <Box p={2} borderBottom={1} borderColor="divider">
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+              color="warning"
+            />
+          }
+          label={
+            <Typography variant="body2" color={showArchived ? "warning.main" : "text.secondary"}>
+              {showArchived ? "Showing Archived Pharmacists" : "Show Archived Pharmacists"}
+            </Typography>
+          }
+        />
+      </Box>
+      <List>
+        <Scrollbar sx={{ height: { lg: 'calc(100vh - 100px)', md: '100vh' }, maxHeight: '800px' }}>
+          {pharmacists.map((pharmacist) => (
+            <PharmacistListItem
+              key={pharmacist.id}
+              active={pharmacist.id === active}
+              {...pharmacist}
+              onPharmacistClick={() => {
+                dispatch(SelectPharmacist(pharmacist.id));
+                showrightSidebar();
+              }}
+              onDeleteClick={() => dispatch(deletePharmacist(pharmacist.id))}
+            />
+          ))}
+        </Scrollbar>
+      </List>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -14,315 +14,365 @@ import {
 } from '@mui/material';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import { useSelector, useDispatch } from 'react-redux';
-import { addPharmacist } from '../../../store/apps/pharmacists/PharmacistSlice';
-import user1 from '../../../assets/images/profile/user-1.jpg';
+import { addPharmacist, fetchPharmacists } from '../../../store/apps/pharmacists/PharmacistSlice';
+import axios from '../../../utils/axios';
 
-const states = [
-  { value: 'AL', label: 'Alabama' },
-  { value: 'AK', label: 'Alaska' },
-  { value: 'AZ', label: 'Arizona' },
-  { value: 'AR', label: 'Arkansas' },
-  { value: 'CA', label: 'California' },
-  { value: 'CO', label: 'Colorado' },
-  { value: 'CT', label: 'Connecticut' },
-  { value: 'DE', label: 'Delaware' },
-  { value: 'FL', label: 'Florida' },
-  { value: 'GA', label: 'Georgia' },
-  { value: 'HI', label: 'Hawaii' },
-  { value: 'ID', label: 'Idaho' },
-  { value: 'IL', label: 'Illinois' },
-  { value: 'IN', label: 'Indiana' },
-  { value: 'IA', label: 'Iowa' },
-  { value: 'KS', label: 'Kansas' },
-  { value: 'KY', label: 'Kentucky' },
-  { value: 'LA', label: 'Louisiana' },
-  { value: 'ME', label: 'Maine' },
-  { value: 'MD', label: 'Maryland' },
-  { value: 'MA', label: 'Massachusetts' },
-  { value: 'MI', label: 'Michigan' },
-  { value: 'MN', label: 'Minnesota' },
-  { value: 'MS', label: 'Mississippi' },
-  { value: 'MO', label: 'Missouri' },
-  { value: 'MT', label: 'Montana' },
-  { value: 'NE', label: 'Nebraska' },
-  { value: 'NV', label: 'Nevada' },
-  { value: 'NH', label: 'New Hampshire' },
-  { value: 'NJ', label: 'New Jersey' },
-  { value: 'NM', label: 'New Mexico' },
-  { value: 'NY', label: 'New York' },
-  { value: 'NC', label: 'North Carolina' },
-  { value: 'ND', label: 'North Dakota' },
-  { value: 'OH', label: 'Ohio' },
-  { value: 'OK', label: 'Oklahoma' },
-  { value: 'OR', label: 'Oregon' },
-  { value: 'PA', label: 'Pennsylvania' },
-  { value: 'RI', label: 'Rhode Island' },
-  { value: 'SC', label: 'South Carolina' },
-  { value: 'SD', label: 'South Dakota' },
-  { value: 'TN', label: 'Tennessee' },
-  { value: 'TX', label: 'Texas' },
-  { value: 'UT', label: 'Utah' },
-  { value: 'VT', label: 'Vermont' },
-  { value: 'VA', label: 'Virginia' },
-  { value: 'WA', label: 'Washington' },
-  { value: 'WV', label: 'West Virginia' },
-  { value: 'WI', label: 'Wisconsin' },
-  { value: 'WY', label: 'Wyoming' },
+const departments = [
+  { value: 'Clinical Pharmacy', label: 'Clinical Pharmacy' },
+  { value: 'Hospital Pharmacy', label: 'Hospital Pharmacy' },
+  { value: 'Compounding Pharmacy', label: 'Compounding Pharmacy' },
+  { value: 'Staff', label: 'Staff' },
 ];
-
 
 const PharmacistAdd = () => {
   const dispatch = useDispatch();
-  const id = useSelector((state) => state.pharmacistsReducer.pharmacists.length + 1);
-  const [modal, setModal] = React.useState(false);
+  const [modal, setModal] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  const toggle = () => {
-    setModal(!modal);
-  };
-
-  const [values, setValues] = React.useState({
+  const [values, setValues] = useState({
+    firstname: '',
+    lastname: '',
     phone: '',
     email: '',
-    deanumber: '',
-    licensenumber: '',
-    licenseexpiration: '',
-    npinumber: '',    
-    languagesspoken: '',    
-    address: '',
-    address2: '',
-    city: '',
-    state: '',
-    zipcode: '',
+    department: '',
+    yearsOfExperience: '',
+    deaNumber: '',
+    licenseNumber: '',
+    licenseExpiration: '',
+    npiNumber: '',
+    languagesSpoken: '',
     notes: '',
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    dispatch(
-      addPharmacist(
-        id,
-        values.phone,
-        values.email,
-        user1,
-        values.deanumber,
-        values.licensenumber,
-        values.licenseexpiration,
-        values.npinumber,
-        values.languagesspoken,
-        values.address,
-        values.address2,
-        values.city,
-        values.state,
-        values.zipcode,
-        values.notes,
-      ),
-    );
+  const toggle = () => {
     setModal(!modal);
+    setError(null);
+    setSuccess(null);
+    setValues({
+      firstname: '',
+      lastname: '',
+      phone: '',
+      email: '',
+      department: '',
+      yearsOfExperience: '',
+      deaNumber: '',
+      licenseNumber: '',
+      licenseExpiration: '',
+      npiNumber: '',
+      languagesSpoken: '',
+      notes: '',
+    });
   };
 
-  const handleChange2 = (event) => {
-    setValues({ ...values, gender: event.target.value });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Map frontend field names to backend field names
+      const backendData = {
+        first_name: values.firstname,
+        last_name: values.lastname,
+        phone: values.phone,
+        email: values.email,
+        type: values.department?.toLowerCase().includes('clinical') ? 'clinical' :
+              values.department?.toLowerCase().includes('hospital') ? 'hospital' :
+              values.department?.toLowerCase().includes('compounding') ? 'compounding' : 'staff',
+        dea_number: values.deaNumber,
+        license_number: values.licenseNumber,
+        license_expiration: values.licenseExpiration,
+        npi_number: values.npiNumber,
+        years_experience: parseInt(values.yearsOfExperience) || 0,
+        languages_spoken: values.languagesSpoken,
+        notes: values.notes,
+      };
+
+      const result = await axios.post('/api/pharmacists', backendData);
+      setSuccess('Pharmacist created successfully!');
+      // Refresh the pharmacist list immediately
+      await dispatch(fetchPharmacists());
+      // Close the modal after 1.5 seconds to show the success message
+      setTimeout(() => {
+        toggle();
+      }, 1500);
+    } catch (err) {
+      console.log('Full error object:', err); // Log the full error object
+
+      // Handle the error based on its structure
+      if (err.error) {
+        setError(err.error);
+      } else if (err.response?.status === 409) {
+        setError('This email address is already registered to another pharmacist. Please use a different email.');
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to create pharmacist. Please try again.');
+      }
+    }
   };
 
-  const handleChange3 = (event) => {
-    setValues({ ...values, state: event.target.value });
+  const handleChange = (event) => {
+    const { id, value } = event.target;
+    setValues(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
 
-return (
-  <>
-    <Box p={3} pb={1}>
-      <Button color="primary" variant="contained" fullWidth onClick={toggle}>
-        Add New Pharmacist
-      </Button>
-    </Box>
-    <Dialog
-      open={modal}
-      onClose={toggle}
-      maxWidth="sm"
-      aria-labelledby="alert-dialog-title"
-      aria-describedby="alert-dialog-description"
-    >
-      <DialogTitle id="alert-dialog-title" variant="h5">
-        {'Add New Pharmacist'}
-      </DialogTitle>
-      <DialogContent>
-        <DialogContentText id="alert-dialog-description">
-          Add a new pharmacist you administer. Fill in all fields and click on the 'Submit' button.
-        </DialogContentText>
-        <Box mt={3}>
+  const handleDepartmentChange = (event) => {
+    setValues(prev => ({
+      ...prev,
+      department: event.target.value
+    }));
+  };
+
+  const isFormValid = () => {
+    return (
+      values.firstname &&
+      values.lastname &&
+      values.phone &&
+      values.email &&
+      values.department &&
+      values.yearsOfExperience &&
+      values.deaNumber &&
+      values.licenseNumber &&
+      values.licenseExpiration
+    );
+  };
+
+  return (
+    <>
+      <Box p={3} pb={1}>
+        <Button color="primary" variant="contained" fullWidth onClick={toggle}>
+          Add New Pharmacist
+        </Button>
+      </Box>
+      <Dialog
+        open={modal}
+        onClose={toggle}
+        maxWidth="sm"
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title" variant="h5">
+          Add New Pharmacist
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Fill in all required fields and click on the submit button.
+          </DialogContentText>
+          {error && (
+            <Typography color="error" variant="body2" sx={{ mt: 2, mb: 2, fontWeight: 'bold' }}>
+              {error}
+            </Typography>
+          )}
+          {success && (
+            <Typography color="success" variant="body2" sx={{ mt: 2, mb: 2, fontWeight: 'bold' }}>
+              {success}
+            </Typography>
+          )}
+          
           <form onSubmit={handleSubmit}>
-            <Grid spacing={3} container>
+            <Grid container spacing={3}>
+              <Grid item xs={12} lg={12}>
+                <Typography variant="h6" fontWeight="500">
+                  Basic Information
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} lg={6}>
-                <FormLabel>First Name</FormLabel>
+                <FormLabel>First Name *</FormLabel>
                 <TextField
                   id="firstname"
                   size="small"
                   variant="outlined"
                   fullWidth
+                  required
                   value={values.firstname}
-                  onChange={(e) => setValues({ ...values, firstname: e.target.value })}
+                  onChange={handleChange}
                 />
               </Grid>
+
               <Grid item xs={12} lg={6}>
-                <FormLabel>Last Name</FormLabel>
+                <FormLabel>Last Name *</FormLabel>
                 <TextField
                   id="lastname"
-                  required
                   size="small"
                   variant="outlined"
                   fullWidth
+                  required
                   value={values.lastname}
-                  onChange={(e) => setValues({ ...values, lastname: e.target.value })}
+                  onChange={handleChange}
                 />
               </Grid>
+
               <Grid item xs={12} lg={6}>
-                <FormLabel>Phone</FormLabel>
+                <FormLabel>Phone *</FormLabel>
                 <TextField
                   id="phone"
                   size="small"
                   variant="outlined"
                   fullWidth
+                  required
                   value={values.phone}
-                  onChange={(e) => setValues({ ...values, phone: e.target.value })}
+                  onChange={handleChange}
                 />
               </Grid>
+
               <Grid item xs={12} lg={6}>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Email *</FormLabel>
                 <TextField
                   id="email"
                   type="email"
-                  required
                   size="small"
                   variant="outlined"
                   fullWidth
+                  required
                   value={values.email}
-                  onChange={(e) => setValues({ ...values, email: e.target.value })}
+                  onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} lg={12}>
-                <FormLabel>Address</FormLabel>
-                <TextField
-                  id="address"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  value={values.address}
-                  onChange={(e) => setValues({ ...values, address: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={6}>
-                <FormLabel>DEA Number</FormLabel>
-                <TextField
-                  id="deanumber"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  value={values.deanumber}
-                  onChange={(e) => setValues({ ...values, deanumber: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={6}>
-                <FormLabel>NPI Number</FormLabel>
-                <TextField
-                  id="npinumber"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  value={values.npinumber}
-                  onChange={(e) => setValues({ ...values, npinumber: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={6}>
-                <FormLabel>License Number</FormLabel>
-                <TextField
-                  id="licensenumber"
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  value={values.licensenumber}
-                  onChange={(e) => setValues({ ...values, licensenumber: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} lg={6}>
-                  <FormLabel>License Expiration</FormLabel>
-                  <TextField
-                    id="licenseexpiration"
-                    type="date"
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    value={values.licenseexpiration}
-                    onChange={(e) => setValues({ ...values, licenseexpiration: e.target.value })}
-                  />
-                </Grid>
 
               <Grid item xs={12} lg={6}>
-                <FormLabel>Department</FormLabel>
-                <TextField
+                <FormLabel>Department *</FormLabel>
+                <CustomSelect
                   id="department"
+                  value={values.department}
+                  onChange={handleDepartmentChange}
+                  fullWidth
+                  required
                   size="small"
                   variant="outlined"
-                  fullWidth
-                  value={values.department}
-                  onChange={(e) => setValues({ ...values, department: e.target.value })}
-                />
+                >
+                  {departments.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </CustomSelect>
               </Grid>
 
               <Grid item xs={12} lg={6}>
-                <FormLabel>Years of Experience</FormLabel>
+                <FormLabel>Years of Experience *</FormLabel>
                 <TextField
                   id="yearsOfExperience"
                   type="number"
                   size="small"
+                  variant="outlined"
                   fullWidth
+                  required
                   value={values.yearsOfExperience}
-                  onChange={(e) => setValues({ ...values, yearsOfExperience: e.target.value })}
+                  onChange={handleChange}
+                  inputProps={{ min: 0, max: 50 }}
                 />
               </Grid>
-              
+
               <Grid item xs={12} lg={12}>
-                <FormLabel>Languages Spoken</FormLabel>
+                <Typography variant="h6" fontWeight="500" sx={{ mt: 2 }}>
+                  License & Certification Information
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} lg={6}>
+                <FormLabel>DEA Number *</FormLabel>
                 <TextField
-                  id="languagesspoken"
+                  id="deaNumber"
                   size="small"
                   variant="outlined"
                   fullWidth
-                  value={values.languagesspoken}
-                  onChange={(e) => setValues({ ...values, languagesspoken: e.target.value })}
+                  required
+                  value={values.deaNumber}
+                  onChange={handleChange}
                 />
               </Grid>
-              
-              
+
+              <Grid item xs={12} lg={6}>
+                <FormLabel>License Number *</FormLabel>
+                <TextField
+                  id="licenseNumber"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.licenseNumber}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12} lg={6}>
+                <FormLabel>License Expiration *</FormLabel>
+                <TextField
+                  id="licenseExpiration"
+                  type="date"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={values.licenseExpiration}
+                  onChange={handleChange}
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{
+                    min: new Date().toISOString().split('T')[0] // Set min date to today
+                  }}
+                  helperText="License must not be expired"
+                />
+              </Grid>
+
+              <Grid item xs={12} lg={6}>
+                <FormLabel>NPI Number</FormLabel>
+                <TextField
+                  id="npiNumber"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.npiNumber}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12} lg={12}>
+                <Typography variant="h6" fontWeight="500" sx={{ mt: 2 }}>
+                  Additional Information
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} lg={12}>
+                <FormLabel>Languages Spoken</FormLabel>
+                <TextField
+                  id="languagesSpoken"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  value={values.languagesSpoken}
+                  onChange={handleChange}
+                  helperText="Separate languages with commas (e.g., English, Spanish, French)"
+                />
+              </Grid>
+
               <Grid item xs={12} lg={12}>
                 <FormLabel>Notes</FormLabel>
                 <TextField
                   id="notes"
                   size="small"
                   multiline
-                  rows="4"
+                  rows={4}
                   variant="outlined"
                   fullWidth
                   value={values.notes}
-                  onChange={(e) => setValues({ ...values, notes: e.target.value })}
+                  onChange={handleChange}
                 />
               </Grid>
+
               <Grid item xs={12} lg={12}>
                 <Button
                   variant="contained"
                   color="primary"
                   sx={{ mr: 1 }}
                   type="submit"
-                  disabled={
-                    values.phone.length === 0 ||
-                    values.email.length === 0 ||
-                    values.deanumber.length === 0 ||
-                    values.licensenumber.length === 0 ||
-                    values.licenseexpiration.length === 0 ||
-                    values.npinumber.length === 0 ||
-                    values.address.length === 0 
-                  }
+                  disabled={!isFormValid()}
                 >
                   Submit
                 </Button>
@@ -332,12 +382,10 @@ return (
               </Grid>
             </Grid>
           </form>
-        </Box>
-      </DialogContent>
-    </Dialog>
-  </>
-);
-
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 };
 
 export default PharmacistAdd;

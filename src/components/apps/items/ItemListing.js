@@ -16,12 +16,16 @@ import {
   TextField,
   Pagination,
   TableContainer,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import { fetchItems, DeleteItem, SearchItem } from '../../../store/apps/items/ItemSlice';
 import { IconTrash } from '@tabler/icons';
 
 const ItemListing = () => {
   const dispatch = useDispatch();
+  const { items, loading, error, currentFilter, itemSearch } = useSelector((state) => state.itemReducer);
+
   useEffect(() => {
     dispatch(fetchItems());
   }, [dispatch]);
@@ -47,44 +51,91 @@ const ItemListing = () => {
   };
 
   const getVisibleItems = (items, filter, itemSearch) => {
+    const searchTerm = itemSearch.toLowerCase();
+    
     switch (filter) {
       case 'total_items':
         return items.filter(
-          (c) => !c.deleted && c.GenericName.toLocaleLowerCase().includes(itemSearch),
+          (item) => !item.deleted && 
+          (item.generic_name?.toLowerCase().includes(searchTerm) ||
+           item.brand_name?.toLowerCase().includes(searchTerm) ||
+           item.class?.toLowerCase().includes(searchTerm))
         );
-      case 'Pending':
+      case 'schedule_ii':
         return items.filter(
-          (c) =>
-            !c.deleted &&
-            c.Status === 'Pending' &&
-            c.GenericName.toLocaleLowerCase().includes(itemSearch),
+          (item) => !item.deleted && 
+          item.schedule?.toLowerCase() === 'schedule ii' &&
+          (item.generic_name?.toLowerCase().includes(searchTerm) ||
+           item.brand_name?.toLowerCase().includes(searchTerm) ||
+           item.class?.toLowerCase().includes(searchTerm))
         );
-      case 'Closed':
+      case 'schedule_iii':
         return items.filter(
-          (c) =>
-            !c.deleted &&
-            c.Status === 'Closed' &&
-            c.GenericName.toLocaleLowerCase().includes(itemSearch),
+          (item) => !item.deleted && 
+          item.schedule?.toLowerCase() === 'schedule iii' &&
+          (item.generic_name?.toLowerCase().includes(searchTerm) ||
+           item.brand_name?.toLowerCase().includes(searchTerm) ||
+           item.class?.toLowerCase().includes(searchTerm))
         );
-      case 'Open':
+      case 'schedule_iv':
         return items.filter(
-          (c) =>
-            !c.deleted &&
-            c.Status === 'Open' &&
-            c.GenericName.toLocaleLowerCase().includes(itemSearch),
+          (item) => !item.deleted && 
+          item.schedule?.toLowerCase() === 'schedule iv' &&
+          (item.generic_name?.toLowerCase().includes(searchTerm) ||
+           item.brand_name?.toLowerCase().includes(searchTerm) ||
+           item.class?.toLowerCase().includes(searchTerm))
+        );
+      case 'schedule_v':
+        return items.filter(
+          (item) => !item.deleted && 
+          item.schedule?.toLowerCase() === 'schedule v' &&
+          (item.generic_name?.toLowerCase().includes(searchTerm) ||
+           item.brand_name?.toLowerCase().includes(searchTerm) ||
+           item.class?.toLowerCase().includes(searchTerm))
+        );
+      case 'otc':
+        return items.filter(
+          (item) => !item.deleted && 
+          item.schedule?.toLowerCase() === 'otc' &&
+          (item.generic_name?.toLowerCase().includes(searchTerm) ||
+           item.brand_name?.toLowerCase().includes(searchTerm) ||
+           item.class?.toLowerCase().includes(searchTerm))
+        );
+      case 'rx':
+        return items.filter(
+          (item) => !item.deleted && 
+          item.schedule?.toLowerCase() === 'rx' &&
+          (item.generic_name?.toLowerCase().includes(searchTerm) ||
+           item.brand_name?.toLowerCase().includes(searchTerm) ||
+           item.class?.toLowerCase().includes(searchTerm))
         );
       default:
-        throw new Error(`Unknown filter: ${filter}`);
+        return items.filter(
+          (item) => !item.deleted && 
+          (item.generic_name?.toLowerCase().includes(searchTerm) ||
+           item.brand_name?.toLowerCase().includes(searchTerm) ||
+           item.class?.toLowerCase().includes(searchTerm))
+        );
     }
   };
 
-  const items = useSelector((state) =>
-    getVisibleItems(
-      state.itemReducer.items,
-      state.itemReducer.currentFilter,
-      state.itemReducer.itemSearch,
-    ),
-  );
+  const visibleItems = getVisibleItems(items, currentFilter, itemSearch);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box mt={4}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box mt={4}>
@@ -128,7 +179,7 @@ const ItemListing = () => {
                 <Typography variant="h6">Pregnancy Category</Typography>
               </TableCell>
               <TableCell>
-                <Typography variant="h6">Date</Typography>
+                <Typography variant="h6">Date Added</Typography>
               </TableCell>
               <TableCell align="right">
                 <Typography variant="h6">Action</Typography>
@@ -136,54 +187,54 @@ const ItemListing = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {items.map((item) => (
-              <TableRow key={item.Id} hover>
-                <TableCell>{item.Id}</TableCell>
+            {visibleItems.map((item) => (
+              <TableRow key={item.id} hover>
+                <TableCell>{item.id}</TableCell>
                 <TableCell>
                   <Box>
                     <Typography variant="h6" fontWeight="500" noWrap>
-                      {item.GenericName}
+                      {item.generic_name}
                     </Typography>
                   </Box>
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" noWrap>
-                    {item.BrandName}
+                    {item.brand_name}
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography>{item.Class}</Typography>
+                  <Typography>{item.class}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography>{item.Use}</Typography>
+                  <Typography>{item.use_description}</Typography>
                 </TableCell>
                 <TableCell>
                   <Chip
-                  sx={{
-                    backgroundColor: (theme) => {
-                      const color = theme.palette[getScheduleColor(item.Schedule)];
-                      return color ? color.light : theme.palette.grey[300]; // Fallback to grey if color is undefined
-                    },
-                  }}
-                  size="small"
-                  label={item.Schedule}
-                />
+                    sx={{
+                      backgroundColor: (theme) => {
+                        const color = theme.palette[getScheduleColor(item.schedule)];
+                        return color ? color.light : theme.palette.grey[300]; // Fallback to grey if color is undefined
+                      },
+                    }}
+                    size="small"
+                    label={item.schedule}
+                  />
                 </TableCell>
                 <TableCell>
-                  <Typography>{item.Dosage}</Typography>
+                  <Typography>{item.dosage}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography>{item.SideEffects}</Typography>
+                  <Typography>{item.side_effects}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography>{item.PregnancyCategory}</Typography>
+                  <Typography>{item.pregnancy_category}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography>{item.Date}</Typography>
+                  <Typography>{item.date_added}</Typography>
                 </TableCell>
                 <TableCell align="right">
                   <Tooltip title="Delete Item">
-                    <IconButton onClick={() => dispatch(DeleteItem(item.Id))}>
+                    <IconButton onClick={() => dispatch(DeleteItem(item.id))}>
                       <IconTrash size="18" />
                     </IconButton>
                   </Tooltip>

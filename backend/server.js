@@ -95,7 +95,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5002;
-app.listen(PORT, () => {
-    console.log(`🚀 Backend running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Backend running at http://0.0.0.0:${PORT}`);
 });
 

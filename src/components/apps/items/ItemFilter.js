@@ -34,16 +34,18 @@ const getScheduleColor = (schedule) => {
 
 const ItemFilter = () => {
   const dispatch = useDispatch();
-  const counter = useSelector((state) => state.itemReducer.items);
+  const { items } = useSelector((state) => state.itemReducer);
 
-  // Filter items by schedule type
+  // Filter items by schedule type (only non-deleted items)
+  const activeItems = items.filter(item => !item.deleted);
+  
   const scheduleCounts = {
-    scheduleII: counter.filter((t) => t.Schedule.toLowerCase() === 'schedule ii').length,
-    scheduleIII: counter.filter((t) => t.Schedule.toLowerCase() === 'schedule iii').length,
-    scheduleIV: counter.filter((t) => t.Schedule.toLowerCase() === 'schedule iv').length,
-    scheduleV: counter.filter((t) => t.Schedule.toLowerCase() === 'schedule v').length,
-    otc: counter.filter((t) => t.Schedule.toLowerCase() === 'otc').length,
-    rx: counter.filter((t) => t.Schedule.toLowerCase() === 'rx').length,
+    scheduleII: activeItems.filter((item) => item.schedule?.toLowerCase() === 'schedule ii').length,
+    scheduleIII: activeItems.filter((item) => item.schedule?.toLowerCase() === 'schedule iii').length,
+    scheduleIV: activeItems.filter((item) => item.schedule?.toLowerCase() === 'schedule iv').length,
+    scheduleV: activeItems.filter((item) => item.schedule?.toLowerCase() === 'schedule v').length,
+    otc: activeItems.filter((item) => item.schedule?.toLowerCase() === 'otc').length,
+    rx: activeItems.filter((item) => item.schedule?.toLowerCase() === 'rx').length,
   };
 
   return (
@@ -53,7 +55,7 @@ const ItemFilter = () => {
           onClick={() => dispatch(setVisibilityFilter('total_items'))}
           sx={{ backgroundColor: 'primary.light', color: 'primary.main' }}
         >
-          <Typography variant="h3">{counter.length}</Typography>
+          <Typography variant="h3">{activeItems.length}</Typography>
           <Typography variant="h6">Total Items</Typography>
         </BoxStyled>
       </Grid>
