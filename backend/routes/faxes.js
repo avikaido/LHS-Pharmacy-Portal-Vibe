@@ -11,10 +11,40 @@ const router = express.Router();
 // Initialize Telnyx client
 const telnyxClient = telnyx(process.env.TELNYX_API_KEY);
 
-// GET all faxes
+// GET archived faxes (must come before /:id route)
+router.get('/archived', async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT * FROM faxes WHERE deleted = true ORDER BY deleted_on DESC"
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// GET all faxes (with optional include_archived parameter)
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM faxes");
+        const { include_archived } = req.query;
+        let query = `
+            SELECT f.*, 
+                   p.business_name AS pharmacy_name, 
+                   p.fax AS pharmacy_fax, 
+                   p.id AS pharmacy_id,
+                   mp.first_name AS physician_first_name, 
+                   mp.last_name AS physician_last_name, 
+                   mp.npi AS physician_npi
+            FROM faxes f
+            LEFT JOIN pharmacies p ON f.pharmacy_id = p.id
+            LEFT JOIN medicare_physicians mp ON f.physician_npi = mp.npi
+        `;
+        if (include_archived !== 'true') {
+            query += ' WHERE f.deleted = false';
+        }
+        query += ' ORDER BY f.created_on DESC';
+        const result = await pool.query(query);
         res.json(result.rows);
     } catch (err) {
         console.error(err.message);
@@ -30,7 +60,7 @@ router.post('/send', async (req, res) => {
         }
 
         const faxFile = req.files.faxFile;
-        const { requestId, faxNumber, userId } = req.body;
+        const { requestId, faxNumber, userId, pharmacyId, physicianNpi } = req.body;
         
         // Validate required fields
         if (!requestId || !faxNumber || !userId) {
@@ -95,8 +125,8 @@ router.post('/send', async (req, res) => {
 
         // Store fax record in database
         const newFax = await pool.query(
-            "INSERT INTO faxes (request_id, sent_to, sent_by, status, telnyx_fax_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-            [requestId, faxNumber, userId, 'pending', faxMedia.id]
+            `INSERT INTO faxes (request_id, sent_to, sent_by, status, telnyx_fax_id, pharmacy_id, physician_npi) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [requestId, faxNumber, userId, 'pending', faxMedia.id, pharmacyId || null, physicianNpi || null]
         );
 
         res.json({
@@ -141,6 +171,34 @@ router.post('/send', async (req, res) => {
     }
 });
 
+// GET single fax by ID (with pharmacy/physician info)
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            `SELECT f.*, 
+                    p.business_name AS pharmacy_name, 
+                    p.fax AS pharmacy_fax, 
+                    p.id AS pharmacy_id,
+                    mp.first_name AS physician_first_name, 
+                    mp.last_name AS physician_last_name, 
+                    mp.npi AS physician_npi
+             FROM faxes f
+             LEFT JOIN pharmacies p ON f.pharmacy_id = p.id
+             LEFT JOIN medicare_physicians mp ON f.physician_npi = mp.npi
+             WHERE f.id = $1`,
+            [id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Fax not found" });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
 // GET fax status
 router.get('/:id/status', async (req, res) => {
     try {
@@ -180,6 +238,60 @@ router.post('/webhook', async (req, res) => {
     } catch (err) {
         console.error('Webhook error:', err);
         res.sendStatus(500);
+    }
+});
+
+// SOFT DELETE (Archive) fax
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            `UPDATE faxes 
+             SET deleted = true,
+                 deleted_on = now(),
+                 deleted_by = $1,
+                 updated_on = now(),
+                 updated_by = $1
+             WHERE id = $2 AND deleted = false
+             RETURNING *;`,
+            ['1', id] // TODO: Get user from auth
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Fax not found" });
+        }
+        
+        res.json({ message: "Fax archived successfully" });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// RESTORE archived fax
+router.post('/:id/restore', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            `UPDATE faxes 
+             SET deleted = false,
+                 deleted_on = null,
+                 deleted_by = null,
+                 updated_on = now(),
+                 updated_by = $1
+             WHERE id = $2 AND deleted = true
+             RETURNING *;`,
+            ['1', id] // TODO: Get user from auth
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Fax not found or already active" });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Server error" });
     }
 });
 
