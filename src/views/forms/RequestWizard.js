@@ -196,7 +196,7 @@ const pharmacyDetail = [
 const samplePharmacy = pharmacyDetail[0];
 
 // Utility to format medication as Brand (Generic)
-const formatMedName = (item) => `${item.BrandName} (${item.GenericName})`;
+const formatMedName = (item) => `${item.brand_name} (${item.generic_name})`;
 
 // Add this near the top of the file with other constants
 const stateAbbreviationToFull = {
@@ -253,6 +253,7 @@ const RequestWizard = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filteredItems, setFilteredItems] = React.useState([]);
   const [selectedItems, setSelectedItems] = React.useState([]);
+  const [medicationNotes, setMedicationNotes] = React.useState({});
   const [isAddingMedication, setIsAddingMedication] = React.useState(false); // New state for tracking if adding more medications
   const [searchTermPhysician, setSearchTermPhysician] = useState('');
   const [selectedPhysician, setSelectedPhysician] = useState(null);
@@ -347,14 +348,14 @@ const RequestWizard = () => {
       const results = itemsData.filter(item => {
         // First check if this medication is already selected
         const isAlreadySelected = selectedItems.some(selectedItem => 
-          selectedItem.GenericName === item.GenericName || 
-          selectedItem.BrandName === item.BrandName
+          selectedItem.generic_name === item.generic_name || 
+          selectedItem.brand_name === item.brand_name
         );
         if (isAlreadySelected) return false;
 
-        const genericName = item.GenericName ? item.GenericName.toLowerCase() : '';
-        const brandName = item.BrandName ? item.BrandName.toLowerCase() : '';
-        const use = item.Use ? item.Use.toLowerCase() : '';
+        const genericName = item.generic_name ? item.generic_name.toLowerCase() : '';
+        const brandName = item.brand_name ? item.brand_name.toLowerCase() : '';
+        const use = item.use_description ? item.use_description.toLowerCase() : '';
         const searchTermLower = searchTerm.toLowerCase();
         
         return (
@@ -580,24 +581,24 @@ const RequestWizard = () => {
       const relevantMeds = itemsData.filter(item => {
         // Check if this medication is already selected
         const isAlreadySelected = selectedItems.some(selectedItem => 
-          selectedItem.GenericName === item.GenericName || 
-          selectedItem.BrandName === item.BrandName
+          selectedItem.generic_name === item.generic_name || 
+          selectedItem.brand_name === item.brand_name
         );
         if (isAlreadySelected) return false;
 
         const searchTerms = conditionDescription.toLowerCase().split(' ');
-        const itemText = `${item.GenericName} ${item.BrandName} ${item.Use}`.toLowerCase();
+        const itemText = `${item.generic_name} ${item.brand_name} ${item.use_description}`.toLowerCase();
         return searchTerms.some(term => itemText.includes(term));
       });
 
       const response = await axios.post('/api/analyze-condition/analyze', {
         condition: conditionDescription,
         medications: relevantMeds.map(item => ({
-          GenericName: item.GenericName,
-          BrandName: item.BrandName,
-          Use: item.Use,
-          Class: item.Class,
-          Schedule: item.Schedule
+          GenericName: item.generic_name,
+          BrandName: item.brand_name,
+          Use: item.use_description,
+          Class: item.class,
+          Schedule: item.schedule
         })),
         conversationHistory: conversationHistory
       });
@@ -613,13 +614,13 @@ const RequestWizard = () => {
             const medGeneric = med.name?.split('(')[1]?.replace(')', '').trim().toLowerCase();
             const medBrand = med.name?.split('(')[0]?.trim().toLowerCase();
             return !selectedItems.some(selectedItem => 
-              selectedItem.GenericName?.toLowerCase() === medGeneric ||
-              selectedItem.BrandName?.toLowerCase() === medBrand
+                      selectedItem.generic_name?.toLowerCase() === medGeneric ||
+        selectedItem.brand_name?.toLowerCase() === medBrand
             );
           }),
           ...relevantMeds.map(item => ({
-            name: `${item.GenericName} (${item.BrandName})`,
-            reason: item.Use
+            name: `${item.generic_name} (${item.brand_name})`,
+            reason: item.use_description
           }))
         ])];
         newResponse.recommendedMedications = allMeds;
@@ -660,11 +661,11 @@ const RequestWizard = () => {
       const response = await axios.post('/api/analyze-condition/analyze', {
         condition: userResponse,
         medications: itemsData.map(item => ({
-          GenericName: item.GenericName,
-          BrandName: item.BrandName,
-          Use: item.Use,
-          Class: item.Class,
-          Schedule: item.Schedule
+          GenericName: item.generic_name,
+          BrandName: item.brand_name,
+          Use: item.use_description,
+          Class: item.class,
+          Schedule: item.schedule
         })),
         conversationHistory: conversationHistory
       });
@@ -703,12 +704,12 @@ const RequestWizard = () => {
     const part1 = clean(first?.trim().toLowerCase());
     const part2 = clean(second?.replace(')', '').trim().toLowerCase());
     const matchingItem = itemsData.find(item => {
-      const brand = item.BrandName?.trim().toLowerCase();
-      const generic = item.GenericName?.trim().toLowerCase();
-      return (
-        (brand === part1 && generic === part2) ||
-        (brand === part2 && generic === part1)
-      );
+              const brand = item.brand_name?.trim().toLowerCase();
+        const generic = item.generic_name?.trim().toLowerCase();
+        return (
+          (brand === part1 && generic === part2) ||
+          (brand === part2 && generic === part1)
+        );
     });
     console.log('Matching item:', matchingItem);
     if (matchingItem) {
@@ -728,6 +729,7 @@ const RequestWizard = () => {
 
   const handleResetMedication = () => {
     setSelectedItems([]);
+    setMedicationNotes({});
     setSearchTerm('');
     setLlmResponse(null);
     setConversationHistory([]);
@@ -752,6 +754,19 @@ const RequestWizard = () => {
 
   const handleRemoveMedication = (index) => {
     setSelectedItems(prev => prev.filter((_, i) => i !== index));
+    // Also remove the notes for this medication
+    setMedicationNotes(prev => {
+      const newNotes = { ...prev };
+      delete newNotes[index];
+      return newNotes;
+    });
+  };
+
+  const handleMedicationNoteChange = (index, note) => {
+    setMedicationNotes(prev => ({
+      ...prev,
+      [index]: note
+    }));
   };
 
   const renderPharmacyDetails = () => (
@@ -823,8 +838,8 @@ const RequestWizard = () => {
                           }}
                         >
                           <ListItemText
-                            primary={`${item.BrandName} (${item.GenericName})`}
-                            secondary={item.Use}
+                            primary={`${item.brand_name} (${item.generic_name})`}
+                            secondary={item.use_description}
                             primaryTypographyProps={{
                               sx: { transition: 'color 0.2s ease-in-out' }
                             }}
@@ -907,8 +922,8 @@ const RequestWizard = () => {
                           const genericName = medName.split('(')[1]?.replace(')', '').trim();
                           const brandName = medName.split('(')[0].trim();
                           const matchingItem = itemsData.find(item =>
-                            item.GenericName === genericName ||
-                            item.BrandName === brandName
+                            item.generic_name === genericName ||
+                            item.brand_name === brandName
                           );
                           return (
                             <ListItem
@@ -930,7 +945,7 @@ const RequestWizard = () => {
                             >
                               <ListItemText
                                 primary={medName}
-                                secondary={matchingItem ? matchingItem.Use : med.reason}
+                                secondary={matchingItem ? matchingItem.use_description : med.reason}
                                 primaryTypographyProps={{
                                   sx: { transition: 'color 0.2s ease-in-out' }
                                 }}
@@ -987,24 +1002,38 @@ const RequestWizard = () => {
                 </Typography>
                 {selectedItems.map((item, index) => (
                   <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Box>
-                        <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
-                          {formatMedName(item)}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.Use}
-                        </Typography>
-                      </Box>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={() => handleRemoveMedication(index)}
-                      >
-                        Remove
-                      </Button>
-                    </Box>
+                                <Box display="flex" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  {formatMedName(item)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {item.use_description}
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={() => handleRemoveMedication(index)}
+                sx={{ ml: 2, flexShrink: 0 }}
+              >
+                Remove
+              </Button>
+            </Box>
+            <TextField
+              fullWidth
+              size="small"
+              variant="outlined"
+              placeholder="Specify strength or manufacturer"
+              value={medicationNotes[index] || ''}
+              onChange={(e) => handleMedicationNoteChange(index, e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                }
+              }}
+            />
                   </Box>
                 ))}
                 <Box display="flex" gap={2} mt={2}>
@@ -1495,6 +1524,7 @@ const RequestWizard = () => {
     setSearchTerm('');
     setFilteredItems([]);
     setSelectedItems([]);
+    setMedicationNotes({});
     setIsAddingMedication(false);
     setSearchTermPhysician('');
     setSelectedPhysician(null);
@@ -1564,7 +1594,7 @@ const RequestWizard = () => {
       // When returning to step 1, ensure all state is properly restored
       if (selectedItems.length) {
         const items = selectedItems;
-        setSearchTerm(items[0].GenericName || items[0].BrandName || items[0].name);
+        setSearchTerm(items[0].generic_name || items[0].brand_name || items[0].name);
       }
     }
   }, [activeStep, selectedItems]);
@@ -1823,8 +1853,8 @@ const RequestWizard = () => {
       const part2 = clean(second?.replace(')', '').trim().toLowerCase());
       // Check if this medication is already selected (either direction)
       const isAlreadySelected = selectedItems.some(selectedItem => {
-        const brand = selectedItem.BrandName?.trim().toLowerCase();
-        const generic = selectedItem.GenericName?.trim().toLowerCase();
+        const brand = selectedItem.brand_name?.trim().toLowerCase();
+        const generic = selectedItem.generic_name?.trim().toLowerCase();
         return (
           (brand === part1 && generic === part2) ||
           (brand === part2 && generic === part1)
@@ -1848,13 +1878,13 @@ const RequestWizard = () => {
         </Typography>
         {selectedItems.map((item, index) => (
           <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Box>
+            <Box display="flex" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
                   {formatMedName(item)}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {item.Use}
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {item.use_description}
                 </Typography>
               </Box>
               <Button
@@ -1862,10 +1892,24 @@ const RequestWizard = () => {
                 color="error"
                 size="small"
                 onClick={() => handleRemoveMedication(index)}
+                sx={{ ml: 2, flexShrink: 0 }}
               >
                 Remove
               </Button>
             </Box>
+            <TextField
+              fullWidth
+              size="small"
+              variant="outlined"
+              placeholder="Specify strength or manufacturer"
+              value={medicationNotes[index] || ''}
+              onChange={(e) => handleMedicationNoteChange(index, e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                }
+              }}
+            />
           </Box>
         ))}
       </Box>
@@ -1985,12 +2029,13 @@ const RequestWizard = () => {
   // Function to get all form data ready for database submission
   const getFormDataForSubmission = () => {
     return {
-      medications: selectedItems.map(item => ({
-        genericName: item.GenericName,
-        brandName: item.BrandName,
-        use: item.Use,
-        class: item.Class,
-        schedule: item.Schedule
+      medications: selectedItems.map((item, index) => ({
+        genericName: item.generic_name,
+        brandName: item.brand_name,
+        use: item.use_description,
+        class: item.class,
+        schedule: item.schedule,
+        notes: medicationNotes[index] || ''
       })),
       physician: finalPhysicianData,
       patient: values,
