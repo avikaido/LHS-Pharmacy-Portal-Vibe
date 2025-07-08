@@ -1,4 +1,4 @@
-import React, {useEffect, useState } from 'react';
+import React, {useEffect, useState, useRef } from 'react';
 import {
   Box,
   Stepper,
@@ -313,7 +313,6 @@ const RequestWizard = () => {
     insurance1id: '',
     insurance2: '',
     insurance2id: '',
-    notes: '',
   });
   const [termsChecked, setTermsChecked] = useState(false);
   const [physicianSearchLocked, setPhysicianSearchLocked] = useState(false);
@@ -322,6 +321,7 @@ const RequestWizard = () => {
   const [llmSuggestionKey, setLlmSuggestionKey] = useState(0);
   // Add state for final physician data that will be used for database storage
   const [finalPhysicianData, setFinalPhysicianData] = useState(null);
+  const lastNameInputRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchItems());
@@ -1116,6 +1116,32 @@ const RequestWizard = () => {
                 {loadingPhysician && <CircularProgress />}
                 {physicianSuggestions.length > 0 && (
                   <List>
+                    {/* Can't Find My Physician option */}
+                    <ListItem
+                      button
+                      onClick={handleCantFindPhysician}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                          '& .MuiListItemText-primary': {
+                            color: 'primary.main',
+                            fontWeight: 700,
+                          },
+                          '& .MuiListItemText-secondary': {
+                            color: 'primary.main',
+                          }
+                        },
+                        transition: 'all 0.2s ease-in-out',
+                      }}
+                    >
+                      <ListItemText
+                        primary={<span style={{ fontWeight: 700 }}>Can't Find My Physician</span>}
+                        secondary={<span>I will enter my physician manually</span>}
+                        primaryTypographyProps={{ sx: { fontWeight: 700, transition: 'color 0.2s' } }}
+                        secondaryTypographyProps={{ sx: { transition: 'color 0.2s' } }}
+                      />
+                    </ListItem>
+                    {/* Actual search results */}
                     {physicianSuggestions.map((physician) => (
                       <ListItem
                         button
@@ -1165,6 +1191,7 @@ const RequestWizard = () => {
                     value={physicianForm.lastName}
                     onChange={e => setPhysicianForm({ ...physicianForm, lastName: e.target.value })}
                     sx={{ mb: 0 }}
+                    inputRef={lastNameInputRef}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -1468,20 +1495,7 @@ const RequestWizard = () => {
                     sx={{ mb: 0 }}
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <CustomFormLabel htmlFor="notes">Notes</CustomFormLabel>
-                  <TextField
-                    id="notes"
-                    size="small"
-                    multiline
-                    rows="4"
-                    variant="outlined"
-                    fullWidth
-                    value={values.notes}
-                    onChange={(e) => setValues({ ...values, notes: e.target.value })}
-                    sx={{ mb: 0 }}
-                  />
-                </Grid>
+
               </Grid>
             </Box>
             {renderSelectedMedications()}
@@ -1579,7 +1593,6 @@ const RequestWizard = () => {
       insurance1id: '',
       insurance2: '',
       insurance2id: '',
-      notes: '',
     });
     setTermsChecked(false);
     setPhysicianSearchLocked(false);
@@ -2043,6 +2056,15 @@ const RequestWizard = () => {
       submissionDate: new Date().toISOString(),
       formVersion: '1.0'
     };
+  };
+
+  const handleCantFindPhysician = () => {
+    setPhysicianSuggestions([]); // Hide dropdown
+    setTimeout(() => {
+      if (lastNameInputRef.current) {
+        lastNameInputRef.current.focus();
+      }
+    }, 100);
   };
 
   return (
