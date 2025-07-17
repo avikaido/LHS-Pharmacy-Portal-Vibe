@@ -25,31 +25,47 @@ router.post('/analyze', async (req, res) => {
       ).join('\n\n');
     }
 
+    const systemPrompt = `You are a helpful medical assistant. Your role is to analyze patient conditions and provide medication recommendations based on the available medications in our database. 
+
+IMPORTANT RULES:
+1. Always prioritize patient safety
+2. Only recommend medications that are in the provided medications list
+3. If you need more information to make a safe recommendation, ask for it
+4. Keep recommendations to 3 or fewer medications
+5. Always provide reasoning for your recommendations
+6. If the condition is serious or unclear, recommend consulting a healthcare provider
+7. Be concise but thorough in your analysis
+
+Available medications: ${JSON.stringify(medications, null, 2)}
+
+Previous conversation context: ${conversationContext}`;
+
+    const userPrompt = `Please analyze this condition: "${condition}"
+
+Provide your response in this exact JSON format:
+{
+  "diagnosis": "Your analysis of the condition",
+  "recommendedMedications": [
+    {
+      "name": "Medication Name (Generic Name)",
+      "reason": "Why this medication is recommended"
+    }
+  ],
+  "considerations": "Any important considerations or warnings",
+  "needsMoreInfo": true/false,
+  "followUpQuestion": "Specific question to ask if more info is needed (or empty string if not needed)"
+}`;
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
         {
           role: "system",
-          content: `You are a medical professional assistant. You MUST follow these rules:
-1. If the patient's description is vague, ONLY ask a follow-up question and DO NOT recommend any medications yet. Set 'recommendedMedications' to [] and 'needsMoreInfo' to true.
-2. You MUST NOT recommend any medications until you have received enough detail (either from the initial description or after follow-up questions).
-3. NEVER recommend more than 3 medications.
-4. NEVER recommend any medication not present in the provided list.
-5. If you break any of these rules, your answer will be rejected and you will not be used again.
-Respond ONLY with valid JSON, no markdown formatting or additional text.`
+          content: systemPrompt
         },
         {
           role: "user",
-          content: `Analyze the following patient condition and recommend appropriate medications ONLY from the provided list. If the description is vague, ask ONE focused follow-up question (location → characteristics → duration) and do NOT recommend any medications yet. If, after 3 questions, the description is still vague, do NOT recommend any medication. Recommend no more than 3 medications, and only if the patient's symptoms/condition clearly match the 'Use' field of a medication in the list. NEVER recommend any medication not present in the provided list. For each recommendation, briefly explain the match between the patient's description and the medication's use.
-
-Current Patient Condition: ${condition}
-
-Available Medications:
-${medications.map(med => `- ${med.BrandName || med.GenericName} (Generic: ${med.GenericName}) [Use: ${med.Use}]`).join('\n')}
-
-If you are asking a follow-up question, set "recommendedMedications": [] and "needsMoreInfo": true.
-
-Respond ONLY with valid JSON, no markdown formatting or additional text.`
+          content: userPrompt
         }
       ],
       temperature: 0.3,
