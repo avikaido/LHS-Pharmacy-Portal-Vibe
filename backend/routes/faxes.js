@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
         const { include_archived } = req.query;
         let query = `
             SELECT f.*, 
-                   p.business_name AS pharmacy_name, 
+                   p.pharmacy_name AS pharmacy_name, 
                    p.fax AS pharmacy_fax, 
                    p.id AS pharmacy_id,
                    mp.first_name AS physician_first_name, 
@@ -177,7 +177,7 @@ router.get('/:id', async (req, res) => {
         const { id } = req.params;
         const result = await pool.query(
             `SELECT f.*, 
-                    p.business_name AS pharmacy_name, 
+                    p.pharmacy_name AS pharmacy_name, 
                     p.fax AS pharmacy_fax, 
                     p.id AS pharmacy_id,
                     mp.first_name AS physician_first_name, 

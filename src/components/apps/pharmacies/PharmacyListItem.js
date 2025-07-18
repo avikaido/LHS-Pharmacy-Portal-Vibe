@@ -18,7 +18,7 @@ const PharmacyListItem = ({
   onStarredClick,
   onDeleteClick,
   id,
-  pharmacyName,
+  pharmacy_name,
   address,
   image,
   starred,
@@ -37,7 +37,7 @@ const PharmacyListItem = ({
         <Stack direction="row" gap="10px" alignItems="center">
           <Box mr="auto" onClick={onPharmacyClick}>
             <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ maxWidth: '150px' }}>
-              {pharmacyName}
+              {pharmacy_name}
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
               {address}

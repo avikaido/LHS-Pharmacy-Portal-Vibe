@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import { useSelector, useDispatch } from 'react-redux';
-import { addPharmacy } from '../../../store/apps/pharmacies/PharmacySlice';
+import { createPharmacy, fetchPharmacyTypes } from '../../../store/apps/pharmacies/PharmacySlice';
 import user1 from '../../../assets/images/profile/user-1.jpg';
 
 const states = [
@@ -73,15 +73,22 @@ const states = [
 const PharmacyAdd = () => {
   const dispatch = useDispatch();
   const id = useSelector((state) => state.pharmaciesReducer.pharmacies.length + 1);
+  const pharmacyTypes = useSelector((state) => state.pharmaciesReducer.pharmacyTypes);
   const [modal, setModal] = React.useState(false);
+
+  // Fetch pharmacy types when component mounts
+  React.useEffect(() => {
+    dispatch(fetchPharmacyTypes());
+  }, [dispatch]);
 
   const toggle = () => {
     setModal(!modal);
   };
 
   const [values, setValues] = React.useState({
-    pharmacychain: '',
-    pharmacytype: '',
+    pharmacy_name: '',
+    pharmacy_type: '',
+    chain_name: '',
     phone: '',
     fax: '',
     email: '',
@@ -91,48 +98,28 @@ const PharmacyAdd = () => {
     state: '',
     zipcode: '',
     website: '',
-    managername: '',
-    businesshours: '',
-    licensenumber: '',
-    licenseexpiration: '',
-    npinumber: '',
-    insuranceaccepted: '',
-    servicesoffered: '',    
+    contact_person: '',
+    business_hours: '',
+    license_number: '',
+    license_expiration: '',
+    npi_number: '',
+    insurance_accepted: '',
+    services_offered: '',    
     notes: '',
-    
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(
-      addPharmacy(
-        id,
-        values.pharmacychain,
-        values.pharmacytype,
-        user1,
-        values.phone,
-        values.fax,
-        values.email,
-        values.address,
-        values.address2,
-        values.city,
-        values.state,
-        values.zipcode,
-        values.website,
-        values.managername,
-        values.businesshours,
-        values.licensenumber,
-        values.licenseexpiration,
-        values.insuranceaccepted,
-        values.servicesoffered,
-        values.notes,
-      ),
-    );
+    dispatch(createPharmacy(values));
     setModal(!modal);
   };
 
   const handleChange3 = (event) => {
     setValues({ ...values, state: event.target.value });
+  };
+
+  const handlePharmacyTypeChange = (event) => {
+    setValues({ ...values, pharmacy_type: event.target.value });
   };
 
   return (
@@ -160,25 +147,42 @@ const PharmacyAdd = () => {
             <form onSubmit={handleSubmit}>
               <Grid spacing={3} container>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>PharmacyChain</FormLabel>
+                  <FormLabel>Pharmacy Name</FormLabel>
                   <TextField
-                    id="pharmacychain"
+                    id="pharmacy_name"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.pharmacychain}
-                    onChange={(e) => setValues({ ...values, pharmacychain: e.target.value })}
+                    value={values.pharmacy_name}
+                    onChange={(e) => setValues({ ...values, pharmacy_name: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>PharmacyType</FormLabel>
+                  <FormLabel>Pharmacy Type</FormLabel>
+                  <CustomSelect
+                    id="pharmacy_type"
+                    value={values.pharmacy_type}
+                    onChange={handlePharmacyTypeChange}
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                  >
+                    {pharmacyTypes.map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </MenuItem>
+                    ))}
+                  </CustomSelect>
+                </Grid>
+                <Grid item xs={12} lg={6}>
+                  <FormLabel>Chain Name</FormLabel>
                   <TextField
-                    id="pharmacytype"
+                    id="chain_name"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.pharmacytype}
-                    onChange={(e) => setValues({ ...values, pharmacytype: e.target.value })}
+                    value={values.chain_name}
+                    onChange={(e) => setValues({ ...values, chain_name: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
@@ -295,90 +299,84 @@ const PharmacyAdd = () => {
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>ManagerName</FormLabel>
+                  <FormLabel>Contact Person</FormLabel>
                   <TextField
-                    id="managername"
+                    id="contact_person"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.managername}
-                    onChange={(e) => setValues({ ...values, managername: e.target.value })}
+                    value={values.contact_person}
+                    onChange={(e) => setValues({ ...values, contact_person: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>BusinessHuors</FormLabel>
+                  <FormLabel>Business Hours</FormLabel>
                   <TextField
-                    id="businesshours"
+                    id="business_hours"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.businesshours}
-                    onChange={(e) => setValues({ ...values, businesshours: e.target.value })}
+                    value={values.business_hours}
+                    onChange={(e) => setValues({ ...values, business_hours: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>LicenseNumber</FormLabel>
+                  <FormLabel>License Number</FormLabel>
                   <TextField
-                    id="licensenumber"
-                    type="licensenumber"
+                    id="license_number"
                     required
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.licensenumber}
-                    onChange={(e) => setValues({ ...values, licensenumber: e.target.value })}
+                    value={values.license_number}
+                    onChange={(e) => setValues({ ...values, license_number: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>LicenseExpiration</FormLabel>
+                  <FormLabel>License Expiration</FormLabel>
                   <TextField
-                    id="licenseexpiration"
-                    type="licenseexpiration"
+                    id="license_expiration"
+                    type="date"
                     required
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.licenseexpiration}
-                    onChange={(e) => setValues({ ...values, licenseexpiration: e.target.value })}
+                    value={values.license_expiration}
+                    onChange={(e) => setValues({ ...values, license_expiration: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>NPINumber</FormLabel>
+                  <FormLabel>NPI Number</FormLabel>
                   <TextField
-                    id="npinumber"
-                    type="npinumber"
+                    id="npi_number"
                     required
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.npinumber}
-                    onChange={(e) => setValues({ ...values, npinumber: e.target.value })}
+                    value={values.npi_number}
+                    onChange={(e) => setValues({ ...values, npi_number: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>InsuranceAccepted</FormLabel>
+                  <FormLabel>Insurance Accepted</FormLabel>
                   <TextField
-                    id="insuranceaccepted"
-                    type="insuranceaccepted"
-                    required
+                    id="insurance_accepted"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.insuranceaccepted}
-                    onChange={(e) => setValues({ ...values, insuranceaccepted: e.target.value })}
+                    value={values.insurance_accepted}
+                    onChange={(e) => setValues({ ...values, insurance_accepted: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>ServisesOffered</FormLabel>
+                  <FormLabel>Services Offered</FormLabel>
                   <TextField
-                    id="servicesoffered"
-                    type="servicesoffered"
-                    required
+                    id="services_offered"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.servicesoffered}
-                    onChange={(e) => setValues({ ...values, servicesoffered: e.target.value })}
+                    value={values.services_offered}
+                    onChange={(e) => setValues({ ...values, services_offered: e.target.value })}
                   />
                 </Grid>               
                 <Grid item xs={12} lg={12}>
@@ -400,7 +398,7 @@ const PharmacyAdd = () => {
                     color="primary"
                     sx={{ mr: 1 }}
                     type="submit"
-                    disabled={values.pharmacychain.length === 0 || values.notes.length === 0}
+                    disabled={values.pharmacy_name.length === 0 || values.pharmacy_type.length === 0}
                   >
                     Submit
                   </Button>
