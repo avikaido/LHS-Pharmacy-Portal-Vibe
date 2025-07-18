@@ -10,25 +10,25 @@ import {
 } from '@mui/material';
 import { setVisibilityFilter } from '../../../store/apps/physicians/PhysicianSlice';
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
-import { IconMail, IconSend, IconBucket, IconFolder } from '@tabler/icons';
+import { IconMail, IconSend, IconBucket, IconFolder, IconUser, IconStethoscope } from '@tabler/icons';
 import PhysicianAdd from './PhysicianAdd';
 
 const PhysicianFilter = () => {
   const dispatch = useDispatch();
-  const active = useSelector((state) => state.physiciansReducer.currentFilter);
+  const active = useSelector((state) => state.physicians.currentFilter);
   const customizer = useSelector((state) => state.customizer);
   const br = `${customizer.borderRadius}px`;
 
   const filterData = [
     {
       id: 2,
-      name: 'All',
+      name: 'All Physicians',
       sort: 'show_all',
       icon: IconMail,
     },
     {
       id: 3,
-      name: 'Frequent',
+      name: 'Frequently Contacted',
       sort: 'frequent_physician',
       icon: IconSend,
     },
@@ -44,36 +44,79 @@ const PhysicianFilter = () => {
     },
     {
       id: 5,
-      filterbyTitle: 'Department',
+      filterbyTitle: 'Specialties',
     },
 
     {
       id: 7,
-      name: 'Retail Pharmacy',
-      sort: 'retail_pharmacy',
-      icon: IconFolder,
+      name: 'Cardiology',
+      sort: 'cardiology',
+      icon: IconStethoscope,
       color: 'primary.main',
     },
     {
       id: 8,
-      name: 'Compounding Pharmacy',
-      sort: 'compounding_pharmacy',
-      icon: IconFolder,
+      name: 'Dermatology',
+      sort: 'dermatology',
+      icon: IconStethoscope,
       color: 'error.main',
     },
     {
       id: 9,
-      name: 'Clinical Pharmacy',
-      sort: 'clinical_pharmacy',
-      icon: IconFolder,
+      name: 'Neurology',
+      sort: 'neurology',
+      icon: IconStethoscope,
       color: 'success.main',
     },
     {
       id: 10,
-      name: 'Hospital Pharmacy',
-      sort: 'hospital_pharmacy',
-      icon: IconFolder,
-      color: 'success.main',
+      name: 'Orthopedics',
+      sort: 'orthopedics',
+      icon: IconStethoscope,
+      color: 'warning.main',
+    },
+    {
+      id: 11,
+      name: 'Pediatrics',
+      sort: 'pediatrics',
+      icon: IconStethoscope,
+      color: 'info.main',
+    },
+    {
+      id: 12,
+      name: 'Psychiatry',
+      sort: 'psychiatry',
+      icon: IconStethoscope,
+      color: 'secondary.main',
+    },
+    {
+      id: 13,
+      devider: true,
+    },
+    {
+      id: 14,
+      filterbyTitle: 'Departments',
+    },
+    {
+      id: 15,
+      name: 'Emergency Medicine',
+      sort: 'emergency_medicine',
+      icon: IconUser,
+      color: 'error.main',
+    },
+    {
+      id: 16,
+      name: 'Internal Medicine',
+      sort: 'internal_medicine',
+      icon: IconUser,
+      color: 'primary.main',
+    },
+    {
+      id: 17,
+      name: 'Surgery',
+      sort: 'surgery',
+      icon: IconUser,
+      color: 'warning.main',
     },
   ];
 

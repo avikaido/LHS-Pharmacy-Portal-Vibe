@@ -6,7 +6,7 @@ import { SearchPhysician } from '../../../store/apps/physicians/PhysicianSlice';
 import { IconMenu2, IconSearch } from '@tabler/icons';
 
 const PhysicianSearch = ({ onClick }) => {
-  const searchTerm = useSelector((state) => state.physiciansReducer.PhysicianSearch);
+  const searchTerm = useSelector((state) => state.physicians.physicianSearch);
   const dispatch = useDispatch();
 
   return (

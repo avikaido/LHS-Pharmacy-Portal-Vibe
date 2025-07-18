@@ -14,15 +14,14 @@ import { IconStar, IconTrash } from '@tabler/icons';
 
 const PhysicianListItem = ({
   onPhysicianClick,
-  onStarredClick,
   onDeleteClick,
   id,
-  firstname,
+  first_name,
   middle_initial,
-  lastname,
+  last_name,
   image,
-  type,
-  business_name,
+  specialty,
+  practice_name,
   starred,
   active,
 }) => {
@@ -39,10 +38,10 @@ const PhysicianListItem = ({
         <Stack direction="row" gap="10px" alignItems="center">
           <Box mr="auto" onClick={onPhysicianClick}>
             <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ maxWidth: '150px' }}>
-              {firstname} {middle_initial} {lastname}
+              {first_name} {middle_initial} {last_name}
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
-              {business_name}
+              {specialty} - {practice_name}
             </Typography>
           </Box>
           {/* ------------------------------------------- */}

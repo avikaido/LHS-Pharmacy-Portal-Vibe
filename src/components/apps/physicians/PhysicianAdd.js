@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import { useSelector, useDispatch } from 'react-redux';
-import { addPhysician } from '../../../store/apps/physicians/PhysicianSlice';
+import { createPhysician } from '../../../store/apps/physicians/PhysicianSlice';
 import user1 from '../../../assets/images/profile/user-1.jpg';
 
 const states = [
@@ -73,7 +73,6 @@ const states = [
 
 const PhysicianAdd = () => {
   const dispatch = useDispatch();
-  const id = useSelector((state) => state.physiciansReducer.physicians.length + 1);
   const [modal, setModal] = React.useState(false);
 
   const toggle = () => {
@@ -81,43 +80,51 @@ const PhysicianAdd = () => {
   };
 
   const [values, setValues] = React.useState({
+    first_name: '',
+    last_name: '',
     phone: '',
     email: '',
-    deanumber: '',
-    licensenumber: '',
-    licenseexpiration: '',
-    npinumber: '',    
-    languagesspoken: '',    
+    dea_number: '',
+    license_number: '',
+    license_expiration: '',
+    npi_number: '',    
+    languages_spoken: '',    
     address: '',
     address2: '',
     city: '',
     state: '',
-    zipcode: '',
+    zip_code: '',
+    department: '',
+    years_of_experience: '',
+    specialty: '',
     notes: '',
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(
-      addPhysician(
-        id,
-        values.phone,
-        values.email,
-        user1,
-        values.deanumber,
-        values.licensenumber,
-        values.licenseexpiration,
-        values.npinumber,
-        values.languagesspoken,
-        values.address,
-        values.address2,
-        values.city,
-        values.state,
-        values.zipcode,
-        values.notes,
-      ),
-    );
+    dispatch(createPhysician(values));
     setModal(!modal);
+    // Reset form
+    setValues({
+      first_name: '',
+      last_name: '',
+      phone: '',
+      email: '',
+      dea_number: '',
+      license_number: '',
+      license_expiration: '',
+      npi_number: '',    
+      languages_spoken: '',    
+      address: '',
+      address2: '',
+      city: '',
+      state: '',
+      zip_code: '',
+      department: '',
+      years_of_experience: '',
+      specialty: '',
+      notes: '',
+    });
   };
 
   const handleChange2 = (event) => {
@@ -155,24 +162,24 @@ return (
               <Grid item xs={12} lg={6}>
                 <FormLabel>First Name</FormLabel>
                 <TextField
-                  id="firstname"
+                  id="first_name"
                   size="small"
                   variant="outlined"
                   fullWidth
-                  value={values.firstname}
-                  onChange={(e) => setValues({ ...values, firstname: e.target.value })}
+                  value={values.first_name}
+                  onChange={(e) => setValues({ ...values, first_name: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12} lg={6}>
                 <FormLabel>Last Name</FormLabel>
                 <TextField
-                  id="lastname"
+                  id="last_name"
                   required
                   size="small"
                   variant="outlined"
                   fullWidth
-                  value={values.lastname}
-                  onChange={(e) => setValues({ ...values, lastname: e.target.value })}
+                  value={values.last_name}
+                  onChange={(e) => setValues({ ...values, last_name: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12} lg={6}>
@@ -214,47 +221,47 @@ return (
               <Grid item xs={12} lg={6}>
                 <FormLabel>DEA Number</FormLabel>
                 <TextField
-                  id="deanumber"
+                  id="dea_number"
                   size="small"
                   variant="outlined"
                   fullWidth
                   required
-                  value={values.deanumber}
-                  onChange={(e) => setValues({ ...values, deanumber: e.target.value })}
+                  value={values.dea_number}
+                  onChange={(e) => setValues({ ...values, dea_number: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12} lg={6}>
                 <FormLabel>NPI Number</FormLabel>
                 <TextField
-                  id="npinumber"
+                  id="npi_number"
                   size="small"
                   variant="outlined"
                   fullWidth
-                  value={values.npinumber}
-                  onChange={(e) => setValues({ ...values, npinumber: e.target.value })}
+                  value={values.npi_number}
+                  onChange={(e) => setValues({ ...values, npi_number: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12} lg={6}>
                 <FormLabel>License Number</FormLabel>
                 <TextField
-                  id="licensenumber"
+                  id="license_number"
                   size="small"
                   variant="outlined"
                   fullWidth
-                  value={values.licensenumber}
-                  onChange={(e) => setValues({ ...values, licensenumber: e.target.value })}
+                  value={values.license_number}
+                  onChange={(e) => setValues({ ...values, license_number: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12} lg={6}>
                   <FormLabel>License Expiration</FormLabel>
                   <TextField
-                    id="licenseexpiration"
+                    id="license_expiration"
                     type="date"
                     size="small"
                     variant="outlined"
                     fullWidth
-                    value={values.licenseexpiration}
-                    onChange={(e) => setValues({ ...values, licenseexpiration: e.target.value })}
+                    value={values.license_expiration}
+                    onChange={(e) => setValues({ ...values, license_expiration: e.target.value })}
                   />
                 </Grid>
 
@@ -273,24 +280,24 @@ return (
               <Grid item xs={12} lg={6}>
                 <FormLabel>Years of Experience</FormLabel>
                 <TextField
-                  id="yearsOfExperience"
+                  id="years_of_experience"
                   type="number"
                   size="small"
                   fullWidth
-                  value={values.yearsOfExperience}
-                  onChange={(e) => setValues({ ...values, yearsOfExperience: e.target.value })}
+                  value={values.years_of_experience}
+                  onChange={(e) => setValues({ ...values, years_of_experience: e.target.value })}
                 />
               </Grid>
               
               <Grid item xs={12} lg={12}>
                 <FormLabel>Languages Spoken</FormLabel>
                 <TextField
-                  id="languagesspoken"
+                  id="languages_spoken"
                   size="small"
                   variant="outlined"
                   fullWidth
-                  value={values.languagesspoken}
-                  onChange={(e) => setValues({ ...values, languagesspoken: e.target.value })}
+                  value={values.languages_spoken}
+                  onChange={(e) => setValues({ ...values, languages_spoken: e.target.value })}
                 />
               </Grid>
               
@@ -315,12 +322,13 @@ return (
                   sx={{ mr: 1 }}
                   type="submit"
                   disabled={
+                    values.first_name.length === 0 ||
+                    values.last_name.length === 0 ||
                     values.phone.length === 0 ||
                     values.email.length === 0 ||
-                    values.deanumber.length === 0 ||
-                    values.licensenumber.length === 0 ||
-                    values.licenseexpiration.length === 0 ||
-                    values.npinumber.length === 0 ||
+                    values.dea_number.length === 0 ||
+                    values.license_number.length === 0 ||
+                    values.license_expiration.length === 0 ||
                     values.address.length === 0 
                   }
                 >

@@ -25,7 +25,7 @@ export const store = configureStore({
     patientsReducer: PatientsReducer,
     pharmaciesReducer: PharmaciesReducer,
     pharmacistsReducer: PharmacistsReducer,
-    physiciansReducer: PhysiciansReducer,
+    physicians: PhysiciansReducer,
     ticketReducer: TicketReducer,
     itemReducer: ItemReducer,
     faxReducer: FaxReducer,

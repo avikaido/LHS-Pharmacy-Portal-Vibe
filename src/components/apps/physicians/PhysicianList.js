@@ -4,8 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   SelectPhysician,
   fetchPhysicians,
-  DeletePhysician,
-  toggleStarredPhysician,
+  deletePhysician,
 } from '../../../store/apps/physicians/PhysicianSlice';
 
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
@@ -21,52 +20,52 @@ const PhysicianList = ({ showrightSidebar }) => {
     switch (filter) {
       case 'show_all':
         return physicians.filter(
-          (c) => !c.deleted && c.firstname.toLocaleLowerCase().includes(physicianSearch),
+          (c) => !c.deleted && c.first_name?.toLocaleLowerCase().includes(physicianSearch),
         );
 
       case 'frequent_physician':
         return physicians.filter(
           (c) =>
             !c.deleted &&
-            c.frequentlycontacted &&
-            c.firstname.toLocaleLowerCase().includes(physicianSearch),
+            c.frequently_contacted &&
+            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
         );
 
       case 'starred_physician':
         return physicians.filter(
-          (c) => !c.deleted && c.starred && c.firstname.toLocaleLowerCase().includes(physicianSearch),
+          (c) => !c.deleted && c.starred && c.first_name?.toLocaleLowerCase().includes(physicianSearch),
         );
 
-      case 'retail_pharmacy':
+      case 'internal_medicine':
         return physicians.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Retail Pharmacy' &&
-            c.firstname.toLocaleLowerCase().includes(physicianSearch),
+            c.specialty === 'Internal Medicine' &&
+            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
         );
 
-      case 'compounding_pharmacy':
+      case 'pediatrics':
         return physicians.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Compounding Pharmacy' &&
-            c.firstname.toLocaleLowerCase().includes(physicianSearch),
+            c.specialty === 'Pediatrics' &&
+            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
         );
 
-      case 'clinical_pharmacy':
+      case 'family_medicine':
         return physicians.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Clinical Pharmacy' &&
-            c.firstname.toLocaleLowerCase().includes(physicianSearch),
+            c.specialty === 'Family Medicine' &&
+            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
         );
 
-      case 'hospital_pharmacy':
+      case 'cardiology':
         return physicians.filter(
           (c) =>
             !c.deleted &&
-            c.department === 'Hospital Pharmacy' &&
-            c.firstname.toLocaleLowerCase().includes(physicianSearch),
+            c.specialty === 'Cardiology' &&
+            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
         );
 
       default:
@@ -75,13 +74,13 @@ const PhysicianList = ({ showrightSidebar }) => {
   };
   const physicians = useSelector((state) =>
     getVisiblePhysicians(
-      state.physiciansReducer.physicians,
-      state.physiciansReducer.currentFilter,
-      state.physiciansReducer.physicianSearch,
+      state.physicians.physicians,
+      state.physicians.currentFilter,
+      state.physicians.physicianSearch,
     ),
   );
 
-  const active = useSelector((state) => state.physiciansReducer.physicianContent);
+  const active = useSelector((state) => state.physicians.physicianContent);
 
   return (
     <List>
@@ -95,8 +94,7 @@ const PhysicianList = ({ showrightSidebar }) => {
               dispatch(SelectPhysician(physician.id));
               showrightSidebar();
             }}
-            onDeleteClick={() => dispatch(DeletePhysician(physician.id))}
-            onStarredClick={() => dispatch(toggleStarredPhysician(physician.id))}
+            onDeleteClick={() => dispatch(deletePhysician(physician.id))}
           />
         ))}
       </Scrollbar>
