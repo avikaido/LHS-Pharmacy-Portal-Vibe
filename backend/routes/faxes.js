@@ -171,6 +171,94 @@ router.post('/send', async (req, res) => {
     }
 });
 
+// CREATE new fax (DB only, not Telnyx send)
+router.post('/', async (req, res) => {
+    try {
+        const {
+            fax_number,
+            type = 'outgoing',
+            code,
+            doc_link,
+            users,
+            patients,
+            requests,
+            pharmacy_id,
+            physician_npi,
+            status = 'active',
+            change_log
+        } = req.body;
+
+        // Validate required fields
+        if (!fax_number) {
+            return res.status(400).json({ error: 'fax_number is required' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO faxes (
+                fax_number, type, code, doc_link, users, patients, requests, pharmacy_id, physician_npi,
+                created_on, created_by, updated_on, updated_by, version, change_log, status, deleted
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9,
+                now(), $10, now(), $10, 1, $11, $12, false
+            ) RETURNING *`,
+            [
+                fax_number, type, code, doc_link, users, patients, requests, pharmacy_id, physician_npi,
+                req.user?.id || '1', // created_by, updated_by
+                change_log || null,
+                status
+            ]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// EDIT fax (update fields)
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        // Don't allow updating certain fields
+        delete updates.id;
+        delete updates.created_on;
+        delete updates.created_by;
+        delete updates.deleted;
+        delete updates.deleted_on;
+        delete updates.deleted_by;
+
+        // Add audit fields
+        updates.updated_on = new Date();
+        updates.updated_by = req.user?.id || '1';
+        updates.version = updates.version ? updates.version + 1 : 1;
+
+        // Build the update query dynamically
+        const keys = Object.keys(updates);
+        if (keys.length === 0) {
+            return res.status(400).json({ error: 'No valid fields to update' });
+        }
+        const setClause = keys.map((key, index) => `${key} = $${index + 2}`).join(', ');
+        const values = [id, ...keys.map(key => updates[key])];
+
+        const updateQuery = `
+            UPDATE faxes 
+            SET ${setClause}
+            WHERE id = $1 AND deleted = false
+            RETURNING *;
+        `;
+        const result = await pool.query(updateQuery, values);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Fax not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // GET single fax by ID (with pharmacy/physician info)
 router.get('/:id', async (req, res) => {
     try {
