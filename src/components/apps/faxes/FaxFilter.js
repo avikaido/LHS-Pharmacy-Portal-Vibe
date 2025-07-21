@@ -35,7 +35,7 @@ const FaxFilter = () => {
   const loading = useSelector((state) => state.faxReducer.loading);
   const error = useSelector((state) => state.faxReducer.error);
   const pharmacies = useSelector((state) => state.pharmaciesReducer.pharmacies);
-  const physicians = useSelector((state) => state.physiciansReducer.physicians);
+  const physicians = useSelector((state) => state.physicians.physicians);
   const [pharmacyFilter, setPharmacyFilter] = React.useState('');
   const [doctorFilter, setDoctorFilter] = React.useState('');
 
@@ -144,7 +144,7 @@ const FaxFilter = () => {
           sx={{ mb: 2 }}
         >
           <MenuItem value="">All Doctors</MenuItem>
-          {physicians.map((physician) => (
+          {(physicians || []).map((physician) => (
             <MenuItem key={physician.npi} value={`${physician.first_name} ${physician.last_name}`}>{physician.first_name} {physician.last_name}</MenuItem>
           ))}
         </TextField>

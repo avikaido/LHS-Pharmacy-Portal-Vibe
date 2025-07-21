@@ -21,20 +21,20 @@ const UserList = ({ showrightSidebar }) => {
     switch (filter) {
       case 'show_all':
         return users.filter(
-          (p) => !p.deleted && p.firstname.toLowerCase().includes(userSearch),
+          (p) => !p.deleted && (p.first_name || '').toLowerCase().includes(userSearch)
         );
 
       case 'frequent_user':
         return users.filter(
           (p) =>
             !p.deleted &&
-            p.frequentlycontacted &&
-            p.firstname.toLowerCase().includes(userSearch),
+            p.frequently_contacted &&
+            (p.first_name || '').toLowerCase().includes(userSearch)
         );
 
       case 'starred_user':
         return users.filter(
-          (p) => !p.deleted && p.starred && p.firstname.toLowerCase().includes(userSearch),
+          (p) => !p.deleted && p.starred && (p.first_name || '').toLowerCase().includes(userSearch)
         );
 
       case 'new_user':
@@ -42,7 +42,7 @@ const UserList = ({ showrightSidebar }) => {
           (p) =>
             !p.deleted &&
             p.ecname &&
-            p.firstname.toLowerCase().includes(userSearch),
+            (p.first_name || '').toLowerCase().includes(userSearch)
         );
 
       case 'repeat_user':
@@ -50,7 +50,7 @@ const UserList = ({ showrightSidebar }) => {
           (p) =>
             !p.deleted &&
             p.requests && p.requests.length > 0 &&
-            p.firstname.toLowerCase().includes(userSearch),
+            (p.first_name || '').toLowerCase().includes(userSearch)
         );
 
       case 'older_user':
@@ -58,7 +58,7 @@ const UserList = ({ showrightSidebar }) => {
           (p) =>
             !p.deleted &&
             p.requests && p.requests.length > 0 &&
-            p.firstname.toLowerCase().includes(userSearch),
+            (p.first_name || '').toLowerCase().includes(userSearch)
         );  
 
       default:
@@ -82,8 +82,15 @@ const UserList = ({ showrightSidebar }) => {
         {users.map((user) => (
           <UserListItem
             key={user.id}
+            id={user.id}
+            first_name={user.first_name}
+            last_name={user.last_name}
+            middle_initial={user.middle_initial}
+            email={user.email}
+            dob={user.dob}
+            image={user.image}
+            starred={user.starred}
             active={user.id === active}
-            {...user}
             onUserClick={() => {
               dispatch(SelectUser(user.id));
               showrightSidebar();

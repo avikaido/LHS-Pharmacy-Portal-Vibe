@@ -16,9 +16,9 @@ const UserListItem = ({
   onStarredClick,
   onDeleteClick,
   id,
-  firstname,
-  lastname,
-  middleinitial,
+  first_name,
+  last_name,
+  middle_initial,
   email,
   dob,
   image,
@@ -37,7 +37,7 @@ const UserListItem = ({
         <Stack direction="row" gap="10px" alignItems="center">
           <Box mr="auto">
             <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ maxWidth: '150px' }}>
-              {firstname} {middleinitial} {lastname}
+              {(first_name || '') + ' ' + (middle_initial || '') + ' ' + (last_name || '')}
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
               {dob}
