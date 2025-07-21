@@ -7,11 +7,33 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const { include_archived } = req.query;
-        let query = 'SELECT * FROM requests';
+        let query = `
+            SELECT 
+                r.*, 
+                -- Patient fields
+                p.first_name AS patient_first_name, p.middle_initial AS patient_middle_initial, p.last_name AS patient_last_name,
+                p.phone AS patient_phone, p.email AS patient_email, p.address AS patient_address, p.address2 AS patient_address2,
+                p.city AS patient_city, p.state AS patient_state, p.zipcode AS patient_zipcode, p.dob AS patient_dob, p.gender AS patient_gender,
+                p.insurance1 AS patient_insurance1, p.insurance1_id AS patient_insurance1_id, p.insurance2 AS patient_insurance2, p.insurance2_id AS patient_insurance2_id,
+                p.notes AS patient_notes,
+                -- Physician fields
+                ph.first_name AS doctor_first_name, ph.middle_initial AS doctor_middle_initial, ph.last_name AS doctor_last_name,
+                ph.phone AS doctor_phone, ph.fax AS doctor_fax, ph.email AS doctor_email, ph.address AS doctor_address, ph.address2 AS doctor_address2,
+                ph.city AS doctor_city, ph.state AS doctor_state, ph.zipcode AS doctor_zipcode, ph.npi_number AS doctor_npi_number, ph.dea_number AS doctor_dea_number,
+                ph.specialty AS doctor_specialty, ph.practice_name AS doctor_practice_name, ph.notes AS doctor_notes,
+                -- Pharmacy and item fields
+                pa.pharmacy_name AS pharmacy_name,
+                i.generic_name AS item_generic_name, i.brand_name AS item_brand_name
+            FROM requests r
+            LEFT JOIN patients p ON r.patient_id = p.id
+            LEFT JOIN physicians ph ON r.physician_id = ph.id
+            LEFT JOIN pharmacies pa ON r.pharmacy_id = pa.id
+            LEFT JOIN items i ON r.item_id = i.id
+        `;
         if (include_archived !== 'true') {
-            query += ' WHERE deleted = false';
+            query += ' WHERE r.deleted = false';
         }
-        query += ' ORDER BY created_on DESC';
+        query += ' ORDER BY r.created_on DESC';
         const result = await pool.query(query);
         res.json(result.rows);
     } catch (err) {

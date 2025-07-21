@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { RequestContext } from 'src/context/RequestContext/index';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import {
   Typography,
   Button,
@@ -197,17 +197,17 @@ const PrescriptionDocument = ({ request }) => {
 
         <View style={styles.dateSection}>
           <Text><Text style={styles.label}>DATE:</Text> {currentDate}</Text>
-          <Text><Text style={styles.label}>RE:</Text> {request.patientfirstname} {request.patientmiddleInitial} {request.patientlastname}</Text>
+          <Text><Text style={styles.label}>RE:</Text> {request.patient_first_name} {request.patient_middle_initial} {request.patient_last_name}</Text>
         </View>
 
         <View style={styles.contactGrid}>
           <View style={styles.contactColumn}>
-            <Text><Text style={styles.label}>TO:</Text> {request.doctorname}</Text>
+            <Text><Text style={styles.label}>TO:</Text> {request.doctor_first_name} {request.doctor_middle_initial} {request.doctor_last_name}</Text>
             <Text><Text style={styles.label}>FAX:</Text> {request.doctorfax}</Text>
             <Text><Text style={styles.label}>PHONE:</Text> {request.doctorphone}</Text>
           </View>
           <View style={styles.contactColumn}>
-            <Text><Text style={styles.label}>FROM:</Text> {request.pharmacyname}</Text>
+            <Text><Text style={styles.label}>FROM:</Text> {request.pharmacy_name}</Text>
             <Text><Text style={styles.label}>FAX:</Text> {request.pharmacyfax}</Text>
             <Text><Text style={styles.label}>PHONE:</Text> {request.pharmacyphone}</Text>
           </View>
@@ -215,7 +215,7 @@ const PrescriptionDocument = ({ request }) => {
 
         <View style={styles.messageSection}>
           <Text style={styles.label}>MESSAGE:</Text>
-          <Text>Please review and confirm the information below for {request.patientfirstname} {request.patientlastname}'s prescription request. Please return with your signature and any additional notes.</Text>
+          <Text>Please review and confirm the information below for {request.patient_first_name} {request.patient_last_name}'s prescription request. Please return with your signature and any additional notes.</Text>
         </View>
 
         <View style={styles.disclaimerBox}>
@@ -234,7 +234,7 @@ const PrescriptionDocument = ({ request }) => {
           <Text style={styles.sectionTitle}>Patient Information</Text>
           <View style={styles.formField}>
             <Text style={styles.fieldLabel}>Patient Name:</Text>
-            <Text>{request.patientfirstname} {request.patientmiddleInitial} {request.patientlastname}</Text>
+            <Text>{request.patient_first_name} {request.patient_middle_initial} {request.patient_last_name}</Text>
           </View>
           <View style={styles.formField}>
             <Text style={styles.fieldLabel}>Date of Birth:</Text>
@@ -266,7 +266,7 @@ const PrescriptionDocument = ({ request }) => {
           <Text style={styles.orderDetailHeader}>DISPENSE AS WRITTEN</Text>
           <View style={styles.formField}>
             <Text style={styles.fieldLabel}>Item:</Text>
-            <Text>{request.orderitem}</Text>
+            <Text>{request.item_generic_name} {request.item_brand_name}</Text>
           </View>
           <View style={styles.formField}>
             <Text style={styles.fieldLabel}>Dosage:</Text>
@@ -286,7 +286,7 @@ const PrescriptionDocument = ({ request }) => {
           <Text style={styles.sectionTitle}>Physician Information</Text>
           <View style={styles.formField}>
             <Text style={styles.fieldLabel}>Physician Name:</Text>
-            <Text>{request.doctorname}</Text>
+            <Text>{request.doctor_first_name} {request.doctor_middle_initial} {request.doctor_last_name}</Text>
           </View>
           <View style={styles.formField}>
             <Text style={styles.fieldLabel}>NPI:</Text>
@@ -346,29 +346,41 @@ const PrescriptionDocument = ({ request }) => {
 const RequestDetail = () => {
   const { requests } = useContext(RequestContext);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [patient, setPatient] = useState(null);
+  const [physician, setPhysician] = useState(null);
+  const [pharmacy, setPharmacy] = useState(null);
+  const [item, setItem] = useState(null);
   const [sending, setSending] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
+  const { id } = useParams();
 
   useEffect(() => {
-    // Set the first request as the default selected request initially
-    if (requests.length > 0) {
-      setSelectedRequest(requests[0]);
+    if (id && requests.length > 0) {
+      const request = requests.find((r) => String(r.id) === String(id));
+      if (request) setSelectedRequest(request);
     }
-  }, [requests]);
+  }, [id, requests]);
 
-  // Get the last part of the URL path as the billFrom parameter
-  const title = useLocation();
-  const getTitle = title.pathname.split('/').pop();
-
-  // Find the request that matches the billFrom extracted from the URL
   useEffect(() => {
-    if (getTitle) {
-      const request = requests.find((p) => p.billFrom === getTitle);
-      if (request) {
-        setSelectedRequest(request);
+    if (selectedRequest) {
+      // Fetch patient
+      if (selectedRequest.patient_id) {
+        axios.get(`/api/patients/${selectedRequest.patient_id}`).then(res => setPatient(res.data)).catch(() => setPatient(null));
+      }
+      // Fetch physician
+      if (selectedRequest.physician_id) {
+        axios.get(`/api/physicians/${selectedRequest.physician_id}`).then(res => setPhysician(res.data.data || res.data)).catch(() => setPhysician(null));
+      }
+      // Fetch pharmacy
+      if (selectedRequest.pharmacy_id) {
+        axios.get(`/api/pharmacies/${selectedRequest.pharmacy_id}`).then(res => setPharmacy(res.data.data || res.data)).catch(() => setPharmacy(null));
+      }
+      // Fetch item
+      if (selectedRequest.item_id) {
+        axios.get(`/api/items/${selectedRequest.item_id}`).then(res => setItem(res.data)).catch(() => setItem(null));
       }
     }
-  }, [getTitle, requests]);
+  }, [selectedRequest]);
 
   if (!selectedRequest) {
     return <div>Loading...</div>;
@@ -490,7 +502,7 @@ const RequestDetail = () => {
           </Box>
         </Box>
         <Box textAlign="center">
-        <Typography variant="h6">{selectedRequest.pharmacyname}</Typography>
+        <Typography variant="h6">{selectedRequest.pharmacy_name}</Typography>
         <Typography variant="body2">{selectedRequest.pharmacyaddress}</Typography>
         </Box>
         <Box textAlign="right">
@@ -514,46 +526,28 @@ const RequestDetail = () => {
               <Typography variant="h6" mb={2}>
                 Patient Information
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Name
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientfirstname} {selectedRequest.patientmiddleInitial} {selectedRequest.patientlastname}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Date of Birth
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientdob}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Phone
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientphone}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Email
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientemail}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Address
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientaddress} {selectedRequest.patientaddress2} {selectedRequest.patientcity} {selectedRequest.patientstate}, {selectedRequest.patientzipcode}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Primary Insurance
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientinsurance1}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Primary Insurance Member ID
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientinsurance1ID}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Secondary Insurance
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientinsurance2}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Secondary Insurance Member ID
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientinsurance2ID}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Notes
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.patientnotes}</Typography>
+              <Typography variant="body2" color="text.secondary">Name</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.first_name} {patient?.middle_initial} {patient?.last_name}</Typography>
+              <Typography variant="body2" color="text.secondary">Date of Birth</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.dob}</Typography>
+              <Typography variant="body2" color="text.secondary">Gender</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.gender}</Typography>
+              <Typography variant="body2" color="text.secondary">Phone</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.phone}</Typography>
+              <Typography variant="body2" color="text.secondary">Email</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.email}</Typography>
+              <Typography variant="body2" color="text.secondary">Address</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.address} {patient?.address2} {patient?.city} {patient?.state}, {patient?.zipcode}</Typography>
+              <Typography variant="body2" color="text.secondary">Primary Insurance</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.insurance1}</Typography>
+              <Typography variant="body2" color="text.secondary">Primary Insurance Member ID</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.insurance1_id}</Typography>
+              <Typography variant="body2" color="text.secondary">Secondary Insurance</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.insurance2}</Typography>
+              <Typography variant="body2" color="text.secondary">Secondary Insurance Member ID</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.insurance2_id}</Typography>
+              <Typography variant="body2" color="text.secondary">Notes</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{patient?.notes}</Typography>
             </Box>
           </Paper>
         </Grid>
@@ -563,42 +557,26 @@ const RequestDetail = () => {
               <Typography variant="h6" mb={2}>
                 Physician Information
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Name
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctorname}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Practice
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctorpractice}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Phone
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctorphone}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Fax
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctorfax}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Address
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctoraddress}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                NPI Number
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctorNPI}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                DEA Number
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctorDEA}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Office Contact
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctorofficecontact}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Notes
-              </Typography>
-              <Typography variant="body1" mb={0.5} fontWeight={600}>{selectedRequest.doctornotes}</Typography>
+              <Typography variant="body2" color="text.secondary">Name</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.first_name} {physician?.middle_initial} {physician?.last_name}</Typography>
+              <Typography variant="body2" color="text.secondary">Specialty</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.specialty}</Typography>
+              <Typography variant="body2" color="text.secondary">Practice Name</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.practice_name}</Typography>
+              <Typography variant="body2" color="text.secondary">Phone</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.phone}</Typography>
+              <Typography variant="body2" color="text.secondary">Fax</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.fax}</Typography>
+              <Typography variant="body2" color="text.secondary">Email</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.email}</Typography>
+              <Typography variant="body2" color="text.secondary">Address</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.address} {physician?.address2} {physician?.city} {physician?.state}, {physician?.zipcode}</Typography>
+              <Typography variant="body2" color="text.secondary">NPI Number</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.npi_number}</Typography>
+              <Typography variant="body2" color="text.secondary">DEA Number</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.dea_number}</Typography>
+              <Typography variant="body2" color="text.secondary">Notes</Typography>
+              <Typography variant="body1" mb={0.5} fontWeight={600}>{physician?.notes}</Typography>
             </Box>
           </Paper>
         </Grid>
@@ -635,7 +613,7 @@ const RequestDetail = () => {
               
                 <TableRow>
                   <TableCell>
-                    <Typography variant="body1">{selectedRequest.orderitem}</Typography>
+                    <Typography variant="body1">{item?.generic_name} {item?.brand_name}</Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body1">{selectedRequest.orderdosage}</Typography>

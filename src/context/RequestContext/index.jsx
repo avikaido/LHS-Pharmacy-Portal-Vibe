@@ -12,11 +12,10 @@ export const RequestProvider = ({ children }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('/api/data/requestdata');
+        const response = await axios.get('/api/requests');
         setRequests(response.data);
         setLoading(false);
       } catch (error) {
-        // setError(error);
         setLoading(false);
       }
     };
@@ -27,7 +26,7 @@ export const RequestProvider = ({ children }) => {
   // Function to delete a request
   const deleteRequest = async (id) => {
     try {
-      await axios.delete('/api/data/requestdata/deleterequest', { data: { requestId: id } });
+      await axios.delete(`/api/requests/${id}`);
       setRequests((prevRequests) => prevRequests.filter((request) => request.id !== id));
     } catch (error) {
       console.error('Error deleting request:', error);
@@ -36,7 +35,7 @@ export const RequestProvider = ({ children }) => {
 
   const addRequest = async (newRequest) => {
     try {
-      const response = await axios.post('/api/data/requestdata/addrequest', newRequest);
+      const response = await axios.post('/api/requests', newRequest);
       const addedRequest = response.data;
       setRequests((prevRequests) => [...prevRequests, addedRequest]);
     } catch (error) {
@@ -47,7 +46,7 @@ export const RequestProvider = ({ children }) => {
   // Function to update a request
   const updateRequest = async (updatedRequest) => {
     try {
-      const response = await axios.put('/api/data/requestdata/updaterequest', updatedRequest);
+      const response = await axios.put(`/api/requests/${updatedRequest.id}`, updatedRequest);
       const updated = response.data;
       setRequests((prevRequests) =>
         prevRequests.map((request) => (request.id === updated.id ? updated : request)),

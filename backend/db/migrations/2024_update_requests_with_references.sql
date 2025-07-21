@@ -1,21 +1,41 @@
--- Update all requests to reference real pharmacy, item, physician, and patient IDs
--- Populate request_faxes to associate each request with at least one fax
+-- 1. Assign unique status and references to each request
+DO $$
+DECLARE
+  req RECORD;
+  statuses TEXT[] := ARRAY['Processing', 'Complete', 'Created', 'Pending', 'Cancelled'];
+  idx INT := 1;
+  pharmacy_ids INT[];
+  item_ids INT[];
+  physician_ids INT[];
+  patient_ids INT[];
+  total_pharmacies INT;
+  total_items INT;
+  total_physicians INT;
+  total_patients INT;
+BEGIN
+  SELECT array_agg(id) INTO pharmacy_ids FROM pharmacies WHERE deleted = false;
+  SELECT array_agg(id) INTO item_ids FROM items WHERE deleted = false;
+  SELECT array_agg(id) INTO physician_ids FROM physicians WHERE deleted = false;
+  SELECT array_agg(id) INTO patient_ids FROM patients WHERE deleted = false;
 
--- 1. Find valid IDs
-WITH first_pharmacy AS (SELECT id FROM pharmacies WHERE deleted = false LIMIT 1),
-     first_item AS (SELECT id FROM items WHERE deleted = false LIMIT 1),
-     first_physician AS (SELECT id FROM physicians WHERE deleted = false LIMIT 1),
-     first_patient AS (SELECT id FROM patients WHERE deleted = false LIMIT 1)
+  total_pharmacies := array_length(pharmacy_ids, 1);
+  total_items := array_length(item_ids, 1);
+  total_physicians := array_length(physician_ids, 1);
+  total_patients := array_length(patient_ids, 1);
 
--- 2. Update all requests to reference these IDs if null
-UPDATE requests SET
-    pharmacy_id = (SELECT id FROM first_pharmacy),
-    item_id = (SELECT id FROM first_item),
-    physician_id = (SELECT id FROM first_physician),
-    patient_id = (SELECT id FROM first_patient)
-WHERE (pharmacy_id IS NULL OR item_id IS NULL OR physician_id IS NULL OR patient_id IS NULL);
+  FOR req IN SELECT * FROM requests WHERE deleted = false ORDER BY id LOOP
+    UPDATE requests SET 
+      pharmacy_id = pharmacy_ids[((idx-1) % total_pharmacies) + 1],
+      item_id = item_ids[((idx-1) % total_items) + 1],
+      physician_id = physician_ids[((idx-1) % total_physicians) + 1],
+      patient_id = patient_ids[((idx-1) % total_patients) + 1],
+      status = statuses[((idx-1) % array_length(statuses,1)) + 1]
+    WHERE id = req.id;
+    idx := idx + 1;
+  END LOOP;
+END $$;
 
--- 3. For each request, associate at least one fax (matching physician if possible)
+-- 2. For each request, associate at least one fax (matching physician if possible)
 DO $$
 DECLARE
   req RECORD;

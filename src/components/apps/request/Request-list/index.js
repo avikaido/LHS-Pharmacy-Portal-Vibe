@@ -57,8 +57,8 @@ const RequestList = () => {
   // Filter requests based on search term
   const filteredRequests = requests.filter((request) => {
     return (
-      (request.patientlastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.doctorname.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      ((request.patient_first_name + ' ' + (request.patient_middle_initial || '') + ' ' + request.patient_last_name).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (request.doctor_first_name + ' ' + (request.doctor_middle_initial || '') + ' ' + request.doctor_last_name).toLowerCase().includes(searchTerm.toLowerCase())) &&
       (activeTab === 'All' || request.status === activeTab)
     );
   });
@@ -339,17 +339,17 @@ const RequestList = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="h6" fontSize="14px">
-                    {request.patientfirstname} {request.patientmiddleInitial} {request.patientlastname} 
+                    {request.patient_first_name} {request.patient_middle_initial} {request.patient_last_name}
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography fontSize="14px">{request.orderitem}</Typography>
+                  <Typography fontSize="14px">{request.item_generic_name}{request.item_brand_name ? ` (${request.item_brand_name})` : ''}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography fontSize="14px">{request.pharmacyname}</Typography>
+                  <Typography fontSize="14px">{request.pharmacy_name}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography fontSize="14px">{request.doctorname}</Typography>
+                  <Typography fontSize="14px">{request.doctor_first_name} {request.doctor_middle_initial} {request.doctor_last_name}</Typography>
                 </TableCell>
                 <TableCell>
                   {request.status === 'Processing' ? (
@@ -358,8 +358,12 @@ const RequestList = () => {
                     <Chip color="success" label={request.status} size="small" />
                   ) : request.status === 'Created' ? (
                     <Chip color="warning" label={request.status} size="small" />
+                  ) : request.status === 'Pending' ? (
+                    <Chip color="info" label={request.status} size="small" />
+                  ) : request.status === 'Cancelled' ? (
+                    <Chip color="error" label={request.status} size="small" />
                   ) : (
-                    ''
+                    <Chip color="default" label={request.status} size="small" />
                   )}
                 </TableCell>
                 <TableCell align="center">
