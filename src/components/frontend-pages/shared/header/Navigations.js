@@ -8,30 +8,12 @@ import { NavLink, useLocation } from 'react-router-dom';
 
 export const NavLinks = [
   {
-    title: 'About Us',
-    to: '/frontend-pages/about',
+    title: 'Home',
+    to: '#',
   },
   {
-    title: 'Blog',
-    to: '/frontend-pages/blog',
-  },
-  {
-    title: 'Portfolio',
-    new: true,
-    to: '/frontend-pages/portfolio',
-  },
-
-  {
-    title: 'Dashboard',
-    to: '/',
-  },
-  {
-    title: 'Pricing',
-    to: '/frontend-pages/pricing',
-  },
-  {
-    title: 'Contact',
-    to: '/frontend-pages/contact',
+    title: 'For Pharmacists',
+    to: '#',
   },
 ];
 

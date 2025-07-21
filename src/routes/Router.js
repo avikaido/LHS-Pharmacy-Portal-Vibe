@@ -161,6 +161,7 @@ const Portfolio = Loadable(lazy(() => import('../views/pages/frontend-pages/Port
 const PagePricing = Loadable(lazy(() => import('../views/pages/frontend-pages/Pricing')));
 const BlogPage = Loadable(lazy(() => import('../views/pages/frontend-pages/Blog')));
 const BlogPost = Loadable(lazy(() => import('../views/pages/frontend-pages/BlogPost')));
+const PatientsPage = Loadable(lazy(() => import('../views/pages/frontend-pages/Patients')));
 
 const Router = [
   {
@@ -191,6 +192,7 @@ const Router = [
       { path: 'frontend-pages/pricing', element: <PagePricing /> },
       { path: 'frontend-pages/blog', element: <BlogPage /> },
       { path: 'frontend-pages/blog/detail/:id', element: <BlogPost /> },
+      { path: 'patients', element: <PatientsPage /> },
     ],
   },
   {

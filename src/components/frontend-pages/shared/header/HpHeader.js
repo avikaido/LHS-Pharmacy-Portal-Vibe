@@ -2,89 +2,55 @@ import React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
-import Toolbar from '@mui/material/Toolbar';
-import useMediaQuery from '@mui/material/useMediaQuery';
+import Box from '@mui/material/Box';
 import { styled } from '@mui/material/styles';
 import Logo from '../../../../layouts/full/shared/logo/Logo';
 import Navigations from './Navigations';
-import MobileSidebar from './MobileSidebar';
-import { IconMenu2 } from '@tabler/icons';
 
-const HpHeader = () => {
+const HpHeader = ({ backgroundColor, loginButtonText }) => {
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
+    backgroundColor: backgroundColor || '#fff',
+    boxShadow: 'none',
+    minHeight: '70px',
     justifyContent: 'center',
-    [theme.breakpoints.up('lg')]: {
-      minHeight: '100px',
-    },
-    backgroundColor: theme.palette.primary.light,
   }));
-
-  const ToolbarStyled = styled(Toolbar)(({ theme }) => ({
-    width: '100%',
-    paddingLeft: '0 !important',
-    paddingRight: '0 !important',
-    color: theme.palette.text.secondary,
-    justifyContent: 'space-between',
-  }));
-
-  //   sidebar
-  const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
-  const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
-
-  const [open, setOpen] = React.useState(false);
-
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
-
-  const toggleDrawer = (newOpen) => () => {
-    setOpen(newOpen);
-  };
 
   return (
     <AppBarStyled position="sticky" elevation={0}>
-      <Container
-        sx={{
-          maxWidth: '1400px !important',
-        }}
-      >
-        <ToolbarStyled>
-          <Logo />
-          {lgDown ? (
-            <IconButton color="inherit" aria-label="menu" onClick={handleDrawerOpen}>
-              <IconMenu2 size="20" />
-            </IconButton>
-          ) : null}
-          {lgUp ? (
-            <>
-              <Stack spacing={1} direction="row" alignItems="center">
-                <Navigations />
-              </Stack>
-              <Button color="primary" variant="contained" href="/auth/login">
-                Log In
-              </Button>
-            </>
-          ) : null}
-        </ToolbarStyled>
+      <Container maxWidth={false} sx={{ maxWidth: '1400px !important', px: { xs: 2, sm: 4 } }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" minHeight="70px">
+          {/* Logo on the left */}
+          <Box display="flex" alignItems="center">
+            <Logo />
+          </Box>
+          {/* Navigation in the center */}
+          <Box flex={1} display="flex" justifyContent="center">
+            <Stack direction="row" spacing={4} alignItems="center">
+              <Navigations />
+            </Stack>
+          </Box>
+          {/* CTA Button on the right */}
+          <Box display="flex" alignItems="center">
+            <Button
+              color="primary"
+              variant="contained"
+              href="#"
+              sx={{
+                fontWeight: 700,
+                fontSize: '1rem',
+                px: 3,
+                py: 1.5,
+                borderRadius: '8px',
+                boxShadow: '0px 2px 8px rgba(93, 135, 255, 0.15)',
+                textTransform: 'none',
+              }}
+            >
+              {loginButtonText || 'Get Started Now'}
+            </Button>
+          </Box>
+        </Box>
       </Container>
-      <Drawer
-        anchor="left"
-        open={open}
-        variant="temporary"
-        onClose={toggleDrawer(false)}
-        PaperProps={{
-          sx: {
-            width: 270,
-            border: '0 !important',
-            boxShadow: (theme) => theme.shadows[8],
-          },
-        }}
-      >
-        <MobileSidebar />
-      </Drawer>
     </AppBarStyled>
   );
 };
