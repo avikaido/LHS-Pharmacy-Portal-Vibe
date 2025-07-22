@@ -21,6 +21,7 @@
     "openai": "^4.97.0",
     "pg": "^8.13.3",
     "supertokens-node": "^21.1.0",
+    "svg2img": "^1.0.0-beta.2",
     "telnyx": "^2.0.0"
   },
   "devDependencies": {

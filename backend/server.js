@@ -19,6 +19,7 @@ import faxesRoutes from './routes/faxes.js';
 import itemsRoutes from './routes/items.js';
 import conditionsRouter from './routes/conditions.js';
 import physicianSearchRoutes from './routes/physician_search.js';
+import barcodeRoutes from './routes/barcode.js';
 
 // Supertokens initialization - Temporarily disabled
 /*
@@ -84,6 +85,7 @@ app.use('/api/faxes', faxesRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/analyze-condition', conditionsRouter);
 app.use('/api', physicianSearchRoutes);
+app.use('/api/barcode', barcodeRoutes);
 
 // Supertokens error handling middleware - Temporarily disabled
 // app.use(errorHandler());

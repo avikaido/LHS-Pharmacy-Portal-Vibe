@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -58,6 +58,8 @@ import { format, isValid, parseISO } from 'date-fns';
 import BlankCard from '../../shared/BlankCard';
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
+import axios from 'src/utils/axios';
+import { wrapQrWithBranding } from 'src/utils/qrBranding';
 
 const pharmacyTypes = [
   { value: 'retail', label: 'Retail Pharmacy' },
@@ -88,12 +90,34 @@ const PharmacyDetails = () => {
     action: null,
   });
 
+  const [qrSvg, setQrSvg] = useState(null);
+
   // Initialize original values when entering edit mode
   React.useEffect(() => {
     if (editPharmacy && pharmacyDetail && !originalValues) {
       setOriginalValues({ ...pharmacyDetail });
     }
   }, [editPharmacy, pharmacyDetail, originalValues]);
+
+  const API_BASE = process.env.NODE_ENV === 'production'
+    ? 'https://app.askyourprimary.com/api/barcode/generate'
+    : 'http://localhost:5002/api/barcode/generate';
+
+  useEffect(() => {
+    if (pharmacyDetail && pharmacyDetail.uuid) {
+      const qrUrl = `https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`;
+      axios.get(`${API_BASE}?type=qr&text=${encodeURIComponent(qrUrl)}&format=svg&size=128`)
+        .then(res => setQrSvg(res.data))
+        .catch(() => setQrSvg(null));
+    }
+  }, [pharmacyDetail]);
+
+  // Debug: log the SVG string
+  console.log('qrSvg:', qrSvg);
+  // Combine with branded wrapper if available
+  const brandedQrSvg = typeof qrSvg === 'string' && qrSvg.trim().startsWith('<svg')
+    ? wrapQrWithBranding(qrSvg)
+    : null;
 
   if (loading) return <div>Loading pharmacy details...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -208,6 +232,7 @@ const PharmacyDetails = () => {
             </Stack>
           </Box>
           <Divider />
+          
           {/* Pharmacy Details Table Part */}
           <Box sx={{ overflow: 'auto' }}>
             {!editPharmacy ? (
@@ -224,7 +249,28 @@ const PharmacyDetails = () => {
                           </Typography>
                         </Box>
                       )}
-
+                      {/* Quick Links section at the very top */}
+                      <Box mb={4}>
+                        <Typography variant="h6" color="primary" mb={2} display="flex" alignItems="center">
+                            <IconLink size={20} style={{ marginRight: 8 }} />
+                            Quick Links
+                          </Typography>
+                          <Paper variant="outlined" sx={{ p: 2 }}>
+                            <Grid container spacing={3}>
+                              <Grid item lg={6} xs={12}>
+                                {/* Quick Links Buttons Go Here */}
+                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+                                  <Button variant="contained" color="primary" size="medium" startIcon={<IconFileText size={16} />} sx={{ minWidth: 180, whiteSpace: 'nowrap' }}>
+                                    View Requests
+                                  </Button>
+                                  <Button variant="contained" color="primary" size="medium" startIcon={<IconUser size={16} />} sx={{ minWidth: 180, whiteSpace: 'nowrap' }}>
+                                    View Pharmacists
+                                  </Button>
+                                </Stack>
+                              </Grid>
+                            </Grid>
+                        </Paper>
+                      </Box>
                       {/* Basic Information */}
                       <Box mb={4}>
                         <Typography variant="h6" color="primary" mb={2} display="flex" alignItems="center">
@@ -555,7 +601,7 @@ const PharmacyDetails = () => {
                         </Typography>
                         <Paper variant="outlined" sx={{ p: 2 }}>
                           <Grid container spacing={3}>
-                            <Grid item lg={6} xs={12}>
+                            <Grid item xs={12}>
                               <Box display="flex" alignItems="center" mb={1}>
                                 <IconQrcode size={16} style={{ marginRight: 8, color: 'text.secondary' }} />
                                 <Typography variant="body2" color="text.secondary">
@@ -563,26 +609,20 @@ const PharmacyDetails = () => {
                                 </Typography>
                               </Box>
                               <Box p={2} border={1} borderColor="divider" borderRadius={1} display="flex" justifyContent="center">
-                                <Typography variant="body2" color="text.secondary">
-                                  QR Code will be generated here
-                                </Typography>
+                                {brandedQrSvg ? (
+                                  <span
+                                    style={{ width: 500, height: 500, display: 'inline-block' }}
+                                    dangerouslySetInnerHTML={{ __html: brandedQrSvg }}
+                                  />
+                                ) : qrSvg ? (
+                                  // Fallback: show SVG as preformatted text for debugging
+                                  <pre style={{ maxWidth: 300, overflow: 'auto', background: '#eee', color: '#333', fontSize: 10 }}>{qrSvg}</pre>
+                                ) : (
+                                  <Typography variant="body2" color="text.secondary">
+                                    QR Code will be generated here
+                                  </Typography>
+                                )}
                               </Box>
-                            </Grid>
-                            <Grid item lg={6} xs={12}>
-                              <Box display="flex" alignItems="center" mb={1}>
-                                <IconLink size={16} style={{ marginRight: 8, color: 'text.secondary' }} />
-                                <Typography variant="body2" color="text.secondary">
-                                  Quick Links
-                                </Typography>
-                              </Box>
-                              <Stack spacing={1}>
-                                <Button variant="outlined" size="small" startIcon={<IconFileText size={16} />}>
-                                  View Requests
-                                </Button>
-                                <Button variant="outlined" size="small" startIcon={<IconUser size={16} />}>
-                                  View Pharmacists
-                                </Button>
-                              </Stack>
                             </Grid>
                           </Grid>
                         </Paper>
