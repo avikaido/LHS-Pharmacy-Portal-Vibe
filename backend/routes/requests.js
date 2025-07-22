@@ -3,10 +3,16 @@ import pool from '../db.js';
 
 const router = express.Router();
 
-// GET all requests (optionally include archived)
+// GET all requests (optionally include archived, filter by pharmacy_id, and paginate)
 router.get('/', async (req, res) => {
     try {
-        const { include_archived } = req.query;
+        const {
+            pharmacy_id,
+            include_archived,
+            limit = 10,
+            offset = 0
+        } = req.query;
+
         let query = `
             SELECT 
                 r.*, 
@@ -29,13 +35,45 @@ router.get('/', async (req, res) => {
             LEFT JOIN physicians ph ON r.physician_id = ph.id
             LEFT JOIN pharmacies pa ON r.pharmacy_id = pa.id
             LEFT JOIN items i ON r.item_id = i.id
+            WHERE 1=1
         `;
+        const params = [];
+        let paramCount = 1;
         if (include_archived !== 'true') {
-            query += ' WHERE r.deleted = false';
+            query += ` AND r.deleted = false`;
         }
-        query += ' ORDER BY r.created_on DESC';
-        const result = await pool.query(query);
-        res.json(result.rows);
+        if (pharmacy_id) {
+            query += ` AND r.pharmacy_id = $${paramCount++}`;
+            params.push(pharmacy_id);
+        }
+        query += ` ORDER BY r.created_on DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
+        params.push(parseInt(limit));
+        params.push(parseInt(offset));
+        // Get paginated results
+        const { rows } = await pool.query(query, params);
+        // Get total count for pagination
+        let countQuery = `SELECT COUNT(*) FROM requests r WHERE 1=1`;
+        const countParams = [];
+        let countParamCount = 1;
+        if (include_archived !== 'true') {
+            countQuery += ` AND r.deleted = false`;
+        }
+        if (pharmacy_id) {
+            countQuery += ` AND r.pharmacy_id = $${countParamCount++}`;
+            countParams.push(pharmacy_id);
+        }
+        const { rows: countRows } = await pool.query(countQuery, countParams);
+        const totalCount = parseInt(countRows[0].count);
+        res.json({
+            success: true,
+            data: rows,
+            pagination: {
+                total: totalCount,
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                hasMore: (parseInt(offset) + parseInt(limit)) < totalCount
+            }
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });

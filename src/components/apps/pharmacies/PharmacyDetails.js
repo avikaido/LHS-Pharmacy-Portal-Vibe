@@ -20,6 +20,13 @@ import {
   DialogContentText,
   DialogActions,
   ButtonGroup,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Link as MuiLink,
 } from '@mui/material';
 import {
   isEdit,
@@ -118,6 +125,10 @@ const PharmacyDetails = () => {
     { label: 'Large', value: 512 },
   ];
 
+  // Dynamic requests table state
+  const [requests, setRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+
   // Initialize original values when entering edit mode
   React.useEffect(() => {
     if (editPharmacy && pharmacyDetail && !originalValues) {
@@ -137,6 +148,21 @@ const PharmacyDetails = () => {
         .catch(() => setQrSvg(null));
     }
   }, [pharmacyDetail]);
+
+  // Fetch requests for this pharmacy (first 10 only, no pagination yet)
+  useEffect(() => {
+    if (!pharmacyDetail?.id) return;
+    setRequestsLoading(true);
+    axios.get(`/api/requests?pharmacy_id=${pharmacyDetail.id}&limit=10&offset=0`)
+      .then(res => {
+        setRequests(res.data.data || []);
+        setRequestsLoading(false);
+      })
+      .catch(() => {
+        setRequests([]);
+        setRequestsLoading(false);
+      });
+  }, [pharmacyDetail?.id]);
 
   // Debug: log the SVG string
   console.log('qrSvg:', qrSvg);
@@ -224,6 +250,8 @@ const PharmacyDetails = () => {
   const handleConfirmDialogClose = () => {
     setConfirmDialog({ open: false, title: '', message: '', action: null });
   };
+
+  // Remove requests table and related hooks for now
 
   return (
     <>
@@ -1229,6 +1257,58 @@ const PharmacyDetails = () => {
                 </Scrollbar>
               </BlankCard>
             )}
+          </Box>
+          {/* Dynamic Requests Table Section */}
+          <Box mt={6}>
+            <Typography variant="h6" mb={2}>
+              Requests
+            </Typography>
+            <TableContainer>
+              <Table size="small" aria-label="requests table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Date/Time</TableCell>
+                    <TableCell>Patient</TableCell>
+                    <TableCell>Item</TableCell>
+                    <TableCell>Physician</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {requestsLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">Loading...</TableCell>
+                    </TableRow>
+                  ) : requests.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary' }}>
+                        No requests found for this pharmacy.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    requests.map((row) => (
+                      <TableRow key={row.id} hover>
+                        <TableCell>
+                          <MuiLink href={`/apps/request/detail/${row.id}`} underline="hover" color="primary" fontWeight={600}>
+                            {row.id}
+                          </MuiLink>
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={row.created_on ? new Date(row.created_on).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''} sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14, background: '#e3f2fd', color: '#039be5' }} />
+                        </TableCell>
+                        <TableCell>{row.patient_first_name} {row.patient_last_name}</TableCell>
+                        <TableCell>{row.item_generic_name}</TableCell>
+                        <TableCell>{row.doctor_first_name} {row.doctor_last_name}</TableCell>
+                        <TableCell>
+                          <Chip label={row.status?.charAt(0).toUpperCase() + row.status?.slice(1)} sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14, background: row.status === 'complete' ? '#1de9b6' : row.status === 'processing' ? '#82b1ff' : '#e0e0e0', color: row.status === 'complete' ? '#fff' : row.status === 'processing' ? '#fff' : '#333' }} />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Box>
         </>
       ) : (

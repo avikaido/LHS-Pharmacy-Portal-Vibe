@@ -39,6 +39,8 @@ import { Link } from 'react-router-dom';
 
 const RequestList = () => {
   const { requests, deleteRequest } = useContext(RequestContext);
+  // Use requests.data as the array, fallback to []
+  const requestsArray = Array.isArray(requests?.data) ? requests.data : [];
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   const [selectedRequests, setSelectedRequests] = useState([]);
@@ -55,7 +57,7 @@ const RequestList = () => {
   };
 
   // Filter requests based on search term
-  const filteredRequests = requests.filter((request) => {
+  const filteredRequests = requestsArray.filter((request) => {
     return (
       ((request.patient_first_name + ' ' + (request.patient_middle_initial || '') + ' ' + request.patient_last_name).toLowerCase().includes(searchTerm.toLowerCase()) ||
         (request.doctor_first_name + ' ' + (request.doctor_middle_initial || '') + ' ' + request.doctor_last_name).toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -68,16 +70,16 @@ const RequestList = () => {
   };
 
   // Calculate the counts for different statuses
-  const Processing = requests.filter((t) => t.status === 'Processing').length;
-  const Complete = requests.filter((t) => t.status === 'Complete').length;
-  const Created = requests.filter((t) => t.status === 'Created').length;
+  const Processing = requestsArray.filter((t) => t.status === 'Processing').length;
+  const Complete = requestsArray.filter((t) => t.status === 'Complete').length;
+  const Created = requestsArray.filter((t) => t.status === 'Created').length;
 
   // Toggle all checkboxes
   const toggleSelectAll = () => {
     const selectAllValue = !selectAll;
     setSelectAll(selectAllValue);
     if (selectAllValue) {
-      setSelectedRequests(requests.map((request) => request.id));
+      setSelectedRequests(requestsArray.map((request) => request.id));
     } else {
       setSelectedRequests([]);
     }
@@ -144,7 +146,7 @@ const RequestList = () => {
               </Box>
               <Box>
                 <Typography>Total</Typography>
-                <Typography fontWeight={500}>{requests.length} Requests</Typography>
+                <Typography fontWeight={500}>{requestsArray.length} Requests</Typography>
               </Box>
             </Stack>
           </Box>

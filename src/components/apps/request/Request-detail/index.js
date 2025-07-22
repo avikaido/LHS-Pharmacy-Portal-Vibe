@@ -345,6 +345,8 @@ const PrescriptionDocument = ({ request }) => {
 
 const RequestDetail = () => {
   const { requests } = useContext(RequestContext);
+  // Use requests.data as the array, fallback to []
+  const requestsArray = Array.isArray(requests?.data) ? requests.data : [];
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [patient, setPatient] = useState(null);
   const [physician, setPhysician] = useState(null);
@@ -355,11 +357,11 @@ const RequestDetail = () => {
   const { id } = useParams();
 
   useEffect(() => {
-    if (id && requests.length > 0) {
-      const request = requests.find((r) => String(r.id) === String(id));
+    if (id && requestsArray.length > 0) {
+      const request = requestsArray.find((r) => String(r.id) === String(id));
       if (request) setSelectedRequest(request);
     }
-  }, [id, requests]);
+  }, [id, requestsArray]);
 
   useEffect(() => {
     if (selectedRequest) {
