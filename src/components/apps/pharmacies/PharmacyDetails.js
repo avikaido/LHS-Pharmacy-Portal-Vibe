@@ -19,6 +19,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  ButtonGroup,
 } from '@mui/material';
 import {
   isEdit,
@@ -53,6 +54,15 @@ import {
   IconNotes,
   IconLink,
   IconQrcode,
+  IconBrandWhatsapp,
+  IconBrandFacebook,
+  IconBrandTwitter,
+  IconBrandLinkedin,
+  IconMessage,
+  IconPrinter,
+  IconMaximize,
+  IconWallet,
+  IconBrandGoogle,
 } from '@tabler/icons';
 import { format, isValid, parseISO } from 'date-fns';
 import BlankCard from '../../shared/BlankCard';
@@ -60,6 +70,16 @@ import Scrollbar from 'src/components/custom-scroll/Scrollbar';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import axios from 'src/utils/axios';
 import { wrapQrWithBranding } from 'src/utils/qrBranding';
+import { downloadQrAsSvg, downloadQrAsPng, downloadQrAsPdf, downloadQrAsGif } from 'src/utils/qrDownload';
+import { copyQrImageToClipboard, copyQrLinkToClipboard, copyQrEmbedCodeToClipboard } from 'src/utils/qrClipboard';
+import { shareQrByEmail, shareQrBySms, shareQrByWhatsApp, shareQrByFacebook, shareQrByTwitter, shareQrByLinkedIn } from 'src/utils/qrShare';
+import { printQrSvg } from 'src/utils/qrPrint';
+import { showQrFullscreen } from 'src/utils/qrFullscreen';
+import { downloadPharmacyVCard } from 'src/utils/qrVCard';
+import { downloadAppleWalletPass, showGoogleWalletInfo } from 'src/utils/qrWallet';
+import JSZip from 'jszip';
+import { showQrInfoModal } from 'src/utils/qrInfoModal';
+import { showQrEmbedModal } from 'src/utils/qrEmbedModal';
 
 const pharmacyTypes = [
   { value: 'retail', label: 'Retail Pharmacy' },
@@ -91,6 +111,12 @@ const PharmacyDetails = () => {
   });
 
   const [qrSvg, setQrSvg] = useState(null);
+  const [qrSize, setQrSize] = React.useState(256); // Default to Medium
+  const sizeOptions = [
+    { label: 'Small', value: 128 },
+    { label: 'Medium', value: 256 },
+    { label: 'Large', value: 512 },
+  ];
 
   // Initialize original values when entering edit mode
   React.useEffect(() => {
@@ -608,11 +634,28 @@ const PharmacyDetails = () => {
                                   QR Code
                                 </Typography>
                               </Box>
-                              <Box p={2} border={1} borderColor="divider" borderRadius={1} display="flex" justifyContent="center">
+                              <Box
+                                sx={{
+                                  paddingTop: '20px',
+                                  paddingBottom: '20px',
+                                  px: 2, // keep horizontal padding as before
+                                  border: 1,
+                                  borderColor: 'divider',
+                                  borderRadius: 1,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                                tabIndex={0}
+                                aria-label="Pharmacy QR code section"
+                              >
                                 {brandedQrSvg ? (
                                   <span
                                     style={{ width: 500, height: 500, display: 'inline-block' }}
                                     dangerouslySetInnerHTML={{ __html: brandedQrSvg }}
+                                    aria-label={`QR code for ${pharmacyDetail?.pharmacy_name || 'pharmacy'}`}
+                                    role="img"
                                   />
                                 ) : qrSvg ? (
                                   // Fallback: show SVG as preformatted text for debugging
@@ -622,6 +665,137 @@ const PharmacyDetails = () => {
                                     QR Code will be generated here
                                   </Typography>
                                 )}
+                                {/* QR Code Size Selector */}
+                                <Box mb={0.5} display="flex" alignItems="center" justifyContent="center">
+                                  <Typography variant="body2" sx={{ mr: 2 }}>
+                                    QR Code Size:
+                                  </Typography>
+                                  <ButtonGroup variant="outlined" size="small" aria-label="QR code size selector">
+                                    {sizeOptions.map(opt => (
+                                      <Tooltip key={opt.value} title={`${opt.label} (${opt.value}x${opt.value})`}>
+                                        <Button
+                                          onClick={() => setQrSize(opt.value)}
+                                          variant={qrSize === opt.value ? 'contained' : 'outlined'}
+                                          aria-label={`Set QR code size to ${opt.label}`}
+                                        >
+                                          {opt.label}
+                                        </Button>
+                                      </Tooltip>
+                                    ))}
+                                  </ButtonGroup>
+                                </Box>
+                                {/* QR Code Action Buttons */}
+                                <Stack direction="row" spacing={2} mt={2}>
+                                  <Tooltip title="Download as PNG">
+                                    <Button variant="outlined" size="small" onClick={() => brandedQrSvg && downloadQrAsPng(brandedQrSvg, 'pharmacy-qr.png', qrSize)} aria-label="Download QR code as PNG">
+                                      PNG
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Download as SVG">
+                                    <Button variant="outlined" size="small" onClick={() => brandedQrSvg && downloadQrAsSvg(brandedQrSvg, 'pharmacy-qr.svg', qrSize)} aria-label="Download QR code as SVG">
+                                      SVG
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Download as PDF">
+                                    <Button variant="outlined" size="small" onClick={() => brandedQrSvg && downloadQrAsPdf(brandedQrSvg, 'pharmacy-qr.pdf', qrSize)} aria-label="Download QR code as PDF">
+                                      PDF
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Download as GIF">
+                                    <Button variant="outlined" size="small" onClick={() => brandedQrSvg && downloadQrAsGif(brandedQrSvg, 'pharmacy-qr.gif', qrSize)} aria-label="Download QR code as GIF">
+                                      GIF
+                                    </Button>
+                                  </Tooltip>
+                                </Stack>
+                                {/* Copy/Embed Buttons */}
+                                <Stack direction="row" spacing={2} mt={1}>
+                                  <Tooltip title="Copy Image to Clipboard">
+                                    <Button variant="outlined" size="small" onClick={() => brandedQrSvg && copyQrImageToClipboard(brandedQrSvg)} aria-label="Copy QR code image to clipboard">
+                                      Copy Image
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Copy QR Link to Clipboard">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && copyQrLinkToClipboard(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Copy QR code link to clipboard">
+                                      Copy Link
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Copy Embed Code (SVG)">
+                                    <Button variant="outlined" size="small" onClick={() => brandedQrSvg && copyQrEmbedCodeToClipboard(brandedQrSvg, 'svg')} aria-label="Copy QR code embed code">
+                                      Copy Embed
+                                    </Button>
+                                  </Tooltip>
+                                </Stack>
+                                {/* Social Share Buttons */}
+                                <Stack direction="row" spacing={2} mt={1}>
+                                  <Tooltip title="Share via Email">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByEmail(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via Email">
+                                      <IconMail size={16} />
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Share via SMS">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrBySms(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via SMS">
+                                      <IconMessage size={16} />
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Share via WhatsApp">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByWhatsApp(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via WhatsApp">
+                                      <IconBrandWhatsapp size={16} />
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Share via Facebook">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByFacebook(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via Facebook">
+                                      <IconBrandFacebook size={16} />
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Share via Twitter/X">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByTwitter(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via Twitter/X">
+                                      <IconBrandTwitter size={16} />
+                                    </Button>
+                                  </Tooltip>
+                                  <Tooltip title="Share via LinkedIn">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByLinkedIn(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via LinkedIn">
+                                      <IconBrandLinkedin size={16} />
+                                    </Button>
+                                  </Tooltip>
+                                </Stack>
+                                {/* Print & Fullscreen Buttons Row */}
+                                <Stack direction="row" spacing={2} mt={1}>
+                                  {brandedQrSvg && (
+                                    <Tooltip title="Print QR Code">
+                                      <Button variant="outlined" size="small" onClick={() => printQrSvg(brandedQrSvg, 'Pharmacy QR Code')} aria-label="Print QR code"> 
+                                        <IconPrinter size={16} />
+                                      </Button>
+                                    </Tooltip>
+                                  )}
+                                  {brandedQrSvg && (
+                                    <Tooltip title="Show Fullscreen">
+                                      <Button variant="outlined" size="small" onClick={() => showQrFullscreen(brandedQrSvg, 'Pharmacy QR Code')} aria-label="Show QR code fullscreen"> 
+                                        <IconMaximize size={16} />
+                                      </Button>
+                                    </Tooltip>
+                                  )}
+                                  {pharmacyDetail && pharmacyDetail.uuid && (
+                                    <Tooltip title="Download vCard">
+                                      <Button variant="outlined" size="small" onClick={() => downloadPharmacyVCard(pharmacyDetail, `https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`, 'pharmacy.vcf')} aria-label="Download vCard">
+                                        <IconId size={16} />
+                                      </Button>
+                                    </Tooltip>
+                                  )}
+                                  {brandedQrSvg && pharmacyDetail && (
+                                    <Tooltip title="Show QR Info">
+                                      <Button variant="outlined" size="small" onClick={() => showQrInfoModal(brandedQrSvg, pharmacyDetail, pharmacyDetail.uuid ? `https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}` : '', 'Pharmacy QR Code & Info')} aria-label="Show QR code info">
+                                        Show QR Info
+                                      </Button>
+                                    </Tooltip>
+                                  )}
+                                  {brandedQrSvg && pharmacyDetail && (
+                                    <Tooltip title="Custom Embed Options">
+                                      <Button variant="outlined" size="small" onClick={() => showQrEmbedModal(brandedQrSvg, pharmacyDetail, pharmacyDetail.uuid ? `https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}` : '', 'Custom Embed QR Code', qrSize)} aria-label="Custom embed QR code">
+                                        Custom Embed
+                                      </Button>
+                                    </Tooltip>
+                                  )}
+                                </Stack>
                               </Box>
                             </Grid>
                           </Grid>
