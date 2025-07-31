@@ -31,7 +31,7 @@ const PhysicianSearch = ({ onClick }) => {
         fullWidth
         size="small"
         value={searchTerm}
-        placeholder="Search Physicians"
+        placeholder="Search Doctors"
         variant="outlined"
         onChange={(e) => dispatch(SearchPhysician(e.target.value))}
       />

@@ -20,19 +20,19 @@ const PharmacyList = ({ showrightSidebar }) => {
     dispatch(fetchPharmacies());
   }, [dispatch]);
 
-  const getVisiblePharmacies = (pharmacies, filter, pharmacySearch) => {
-    if (!pharmacies || pharmacies.length === 0) return [];
+  const getVisibleLocations = (locations, filter, locationSearch) => {
+    if (!locations || locations.length === 0) return [];
 
-    const searchTerm = pharmacySearch.toLowerCase();
+    const searchTerm = locationSearch.toLowerCase();
     
     switch (filter) {
       case 'show_all':
-        return pharmacies.filter(
+        return locations.filter(
           (c) => !c.deleted && c.pharmacy_name.toLowerCase().includes(searchTerm),
         );
 
       case 'frequent_pharmacy':
-        return pharmacies.filter(
+        return locations.filter(
           (c) =>
             !c.deleted &&
             c.frequently_contacted &&
@@ -40,12 +40,12 @@ const PharmacyList = ({ showrightSidebar }) => {
         );
 
       case 'starred_pharmacy':
-        return pharmacies.filter(
+        return locations.filter(
           (c) => !c.deleted && c.starred && c.pharmacy_name.toLowerCase().includes(searchTerm),
         );
 
       case 'retail_pharmacy':
-        return pharmacies.filter(
+        return locations.filter(
           (c) =>
             !c.deleted &&
             c.pharmacy_type === 'Retail' &&
@@ -53,7 +53,7 @@ const PharmacyList = ({ showrightSidebar }) => {
         );
 
       case 'compounding_pharmacy':
-        return pharmacies.filter(
+        return locations.filter(
           (c) =>
             !c.deleted &&
             c.pharmacy_type === 'Compounding' &&
@@ -61,7 +61,7 @@ const PharmacyList = ({ showrightSidebar }) => {
         );
 
       case 'independent_pharmacy':
-        return pharmacies.filter(
+        return locations.filter(
           (c) =>
             !c.deleted &&
             c.pharmacy_type === 'Independent' &&
@@ -69,7 +69,7 @@ const PharmacyList = ({ showrightSidebar }) => {
         );
 
       case 'hospital_pharmacy':
-        return pharmacies.filter(
+        return locations.filter(
           (c) =>
             !c.deleted &&
             c.pharmacy_type === 'Hospital Pharmacy' &&
@@ -77,28 +77,28 @@ const PharmacyList = ({ showrightSidebar }) => {
         );  
 
       default:
-        return pharmacies.filter(
+        return locations.filter(
           (c) => !c.deleted && c.pharmacy_name.toLowerCase().includes(searchTerm),
         );
     }
   };
 
-  const visiblePharmacies = getVisiblePharmacies(pharmacies, currentFilter, pharmacySearch);
+  const visibleLocations = getVisibleLocations(pharmacies, currentFilter, pharmacySearch);
   const active = useSelector((state) => state.pharmaciesReducer.pharmacyContent);
 
-  const handlePharmacyClick = (pharmacy) => {
-    dispatch(SelectPharmacy(pharmacy.id));
+  const handleLocationClick = (location) => {
+    dispatch(SelectPharmacy(location.id));
     showrightSidebar();
   };
 
-  const handleDeleteClick = (pharmacyId) => {
-    dispatch(deletePharmacy(pharmacyId));
+  const handleDeleteClick = (locationId) => {
+    dispatch(deletePharmacy(locationId));
   };
 
-  const handleStarredClick = (pharmacy) => {
+  const handleStarredClick = (location) => {
     dispatch(updatePharmacy({
-      id: pharmacy.id,
-      pharmacyData: { starred: !pharmacy.starred }
+      id: location.id,
+      pharmacyData: { starred: !location.starred }
     }));
   };
 
@@ -125,19 +125,19 @@ const PharmacyList = ({ showrightSidebar }) => {
   return (
     <List>
       <Scrollbar sx={{ height: { lg: 'calc(100vh - 100px)', md: '100vh' }, maxHeight: '800px' }}>
-        {visiblePharmacies.length === 0 ? (
+        {visibleLocations.length === 0 ? (
           <div style={{ padding: '20px', textAlign: 'center', color: 'gray' }}>
-            No pharmacies found
+            No locations found
           </div>
         ) : (
-          visiblePharmacies.map((pharmacy) => (
+          visibleLocations.map((location) => (
             <PharmacyListItem
-              key={pharmacy.id}
-              active={pharmacy.id === active}
-              {...pharmacy}
-              onPharmacyClick={() => handlePharmacyClick(pharmacy)}
-              onDeleteClick={() => handleDeleteClick(pharmacy.id)}
-              onStarredClick={() => handleStarredClick(pharmacy)}
+              key={location.id}
+              active={location.id === active}
+              {...location}
+              onPharmacyClick={() => handleLocationClick(location)}
+              onDeleteClick={() => handleDeleteClick(location.id)}
+              onStarredClick={() => handleStarredClick(location)}
             />
           ))
         )}

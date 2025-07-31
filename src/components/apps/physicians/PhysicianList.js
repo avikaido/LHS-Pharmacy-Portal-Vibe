@@ -16,64 +16,64 @@ const PhysicianList = ({ showrightSidebar }) => {
     dispatch(fetchPhysicians());
   }, [dispatch]);
 
-  const getVisiblePhysicians = (physicians, filter, physicianSearch) => {
+  const getVisibleDoctors = (doctors, filter, doctorSearch) => {
     switch (filter) {
       case 'show_all':
-        return physicians.filter(
-          (c) => !c.deleted && c.first_name?.toLocaleLowerCase().includes(physicianSearch),
+        return doctors.filter(
+          (c) => !c.deleted && c.first_name?.toLocaleLowerCase().includes(doctorSearch),
         );
 
       case 'frequent_physician':
-        return physicians.filter(
+        return doctors.filter(
           (c) =>
             !c.deleted &&
             c.frequently_contacted &&
-            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
+            c.first_name?.toLocaleLowerCase().includes(doctorSearch),
         );
 
       case 'starred_physician':
-        return physicians.filter(
-          (c) => !c.deleted && c.starred && c.first_name?.toLocaleLowerCase().includes(physicianSearch),
+        return doctors.filter(
+          (c) => !c.deleted && c.starred && c.first_name?.toLocaleLowerCase().includes(doctorSearch),
         );
 
       case 'internal_medicine':
-        return physicians.filter(
+        return doctors.filter(
           (c) =>
             !c.deleted &&
             c.specialty === 'Internal Medicine' &&
-            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
+            c.first_name?.toLocaleLowerCase().includes(doctorSearch),
         );
 
       case 'pediatrics':
-        return physicians.filter(
+        return doctors.filter(
           (c) =>
             !c.deleted &&
             c.specialty === 'Pediatrics' &&
-            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
+            c.first_name?.toLocaleLowerCase().includes(doctorSearch),
         );
 
       case 'family_medicine':
-        return physicians.filter(
+        return doctors.filter(
           (c) =>
             !c.deleted &&
             c.specialty === 'Family Medicine' &&
-            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
+            c.first_name?.toLocaleLowerCase().includes(doctorSearch),
         );
 
       case 'cardiology':
-        return physicians.filter(
+        return doctors.filter(
           (c) =>
             !c.deleted &&
             c.specialty === 'Cardiology' &&
-            c.first_name?.toLocaleLowerCase().includes(physicianSearch),
+            c.first_name?.toLocaleLowerCase().includes(doctorSearch),
         );
 
       default:
         throw new Error(`Unknown filter: ${filter}`);
     }
   };
-  const physicians = useSelector((state) =>
-    getVisiblePhysicians(
+  const doctors = useSelector((state) =>
+    getVisibleDoctors(
       state.physicians.physicians,
       state.physicians.currentFilter,
       state.physicians.physicianSearch,
@@ -85,16 +85,16 @@ const PhysicianList = ({ showrightSidebar }) => {
   return (
     <List>
       <Scrollbar sx={{ height: { lg: 'calc(100vh - 100px)', md: '100vh' }, maxHeight: '800px' }}>
-        {physicians.map((physician) => (
+        {doctors.map((doctor) => (
           <PhysicianListItem
-            key={physician.id}
-            active={physician.id === active}
-            {...physician}
+            key={doctor.id}
+            active={doctor.id === active}
+            {...doctor}
             onPhysicianClick={() => {
-              dispatch(SelectPhysician(physician.id));
+              dispatch(SelectPhysician(doctor.id));
               showrightSidebar();
             }}
-            onDeleteClick={() => dispatch(deletePhysician(physician.id))}
+            onDeleteClick={() => dispatch(deletePhysician(doctor.id))}
           />
         ))}
       </Scrollbar>

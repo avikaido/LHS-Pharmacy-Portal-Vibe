@@ -106,7 +106,7 @@ const PhysicianDetails = () => {
     }
   }, [editPhysician, physicianDetail, originalValues]);
 
-  if (loading) return <div>Loading physician details...</div>;
+  if (loading) return <div>Loading doctor details...</div>;
   if (error) return <div>Error: {error}</div>;
 
   const handleFieldChange = (field, value) => {
@@ -169,7 +169,7 @@ const PhysicianDetails = () => {
   const handleArchive = () => {
     setConfirmDialog({
       open: true,
-      title: 'Archive Physician',
+      title: 'Archive Doctor',
       message: `Are you sure you want to archive ${physicianDetail.first_name} ${physicianDetail.last_name}? This will hide them from the active list but can be restored later.`,
       action: () => {
         dispatch(deletePhysician(physicianDetail.id));
@@ -181,7 +181,7 @@ const PhysicianDetails = () => {
   const handleRestore = () => {
     setConfirmDialog({
       open: true,
-      title: 'Restore Physician',
+      title: 'Restore Doctor',
       message: `Are you sure you want to restore ${physicianDetail.first_name} ${physicianDetail.last_name}? This will make them active again.`,
       action: () => {
         dispatch(restorePhysician(physicianDetail.id));
@@ -196,11 +196,11 @@ const PhysicianDetails = () => {
 
   return (
     <>
-      {/* Physician Detail Part */}
+              {/* Doctor Detail Part */}
       {physicianDetail ? (
         <>
           <Box p={3} py={2} display={'flex'} alignItems="center">
-            <Typography variant="h5">Physician Details</Typography>
+            <Typography variant="h5">Doctor Details</Typography>
             <Stack gap={0} direction="row" ml={'auto'}>
               {!editPhysician && (
                 <>
@@ -227,19 +227,19 @@ const PhysicianDetails = () => {
             </Stack>
           </Box>
           <Divider />
-          {/* Physician Details Table Part */}
+          {/* Doctor Details Table Part */}
           <Box sx={{ overflow: 'auto' }}>
             {!editPhysician ? (
               <Box>
                 <BlankCard sx={{ p: 0, height: '100%' }}>
                   <Scrollbar sx={{ height: '100%' }}>
                     <Box p={3}>
-                      {/* Status Banner for Archived Physicians */}
+                      {/* Status Banner for Archived Doctors */}
                       {physicianDetail.deleted && (
                         <Box mb={3} p={2} bgcolor="warning.light" borderRadius={1}>
                           <Typography variant="body2" color="warning.dark" display="flex" alignItems="center">
                             <IconArchive size={16} style={{ marginRight: 8 }} />
-                            This physician is archived and not active in the system.
+                            This doctor is archived and not active in the system.
                           </Typography>
                         </Box>
                       )}

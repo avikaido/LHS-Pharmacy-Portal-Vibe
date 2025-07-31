@@ -17,8 +17,8 @@ const Pharmacies = () => {
   const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   const mdUp = useMediaQuery((theme) => theme.breakpoints.up('md'));
   return (
-    <PageContainer title="Pharmacies" description="Pharmacies List Page">
-      <Breadcrumb title="Pharmacies" subtitle="Your Pharmacies" />
+    <PageContainer title="Locations" description="Locations List Page">
+      <Breadcrumb title="Locations" subtitle="Your Locations" />
       <AppCard>
         {/* ------------------------------------------- */}
         {/* Left Part */}

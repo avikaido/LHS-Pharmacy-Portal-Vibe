@@ -171,7 +171,7 @@ const PharmacyDetails = () => {
     ? wrapQrWithBranding(qrSvg)
     : null;
 
-  if (loading) return <div>Loading pharmacy details...</div>;
+  if (loading) return <div>Loading location details...</div>;
   if (error) return <div>Error: {error}</div>;
 
   const handleFieldChange = (field, value) => {
@@ -226,7 +226,7 @@ const PharmacyDetails = () => {
   const handleArchive = () => {
     setConfirmDialog({
       open: true,
-      title: 'Archive Pharmacy',
+      title: 'Archive Location',
       message: `Are you sure you want to archive ${pharmacyDetail.pharmacy_name}? This will hide it from the active list but can be restored later.`,
       action: () => {
         dispatch(deletePharmacy(pharmacyDetail.id));
@@ -238,7 +238,7 @@ const PharmacyDetails = () => {
   const handleRestore = () => {
     setConfirmDialog({
       open: true,
-      title: 'Restore Pharmacy',
+      title: 'Restore Location',
       message: `Are you sure you want to restore ${pharmacyDetail.pharmacy_name}? This will make it active again.`,
       action: () => {
         dispatch(restorePharmacy(pharmacyDetail.id));
@@ -255,11 +255,11 @@ const PharmacyDetails = () => {
 
   return (
     <>
-      {/* Pharmacy Detail Part */}
+              {/* Location Detail Part */}
       {pharmacyDetail ? (
         <>
           <Box p={3} py={2} display={'flex'} alignItems="center">
-            <Typography variant="h5">Pharmacy Details</Typography>
+            <Typography variant="h5">Location Details</Typography>
             <Stack gap={0} direction="row" ml={'auto'}>
               <Tooltip title={editPharmacy ? 'Save' : 'Edit'}>
                 <IconButton onClick={() => dispatch(isEdit())}>
@@ -287,7 +287,7 @@ const PharmacyDetails = () => {
           </Box>
           <Divider />
           
-          {/* Pharmacy Details Table Part */}
+          {/* Location Details Table Part */}
           <Box sx={{ overflow: 'auto' }}>
             {!editPharmacy ? (
               <Box>
@@ -299,7 +299,7 @@ const PharmacyDetails = () => {
                         <Box mb={3} p={2} bgcolor="warning.light" borderRadius={1}>
                           <Typography variant="body2" color="warning.dark" display="flex" alignItems="center">
                             <IconArchive size={16} style={{ marginRight: 8 }} />
-                            This pharmacy is archived and not active in the system.
+                            This location is archived and not active in the system.
                           </Typography>
                         </Box>
                       )}
@@ -337,7 +337,7 @@ const PharmacyDetails = () => {
                               <Box display="flex" alignItems="center" mb={1}>
                                 <IconBuilding size={16} style={{ marginRight: 8, color: 'text.secondary' }} />
                                 <Typography variant="body2" color="text.secondary">
-                                  Pharmacy Name
+                                  Location Name
                                 </Typography>
                               </Box>
                               <Typography variant="body1" fontWeight={500}>
@@ -348,7 +348,7 @@ const PharmacyDetails = () => {
                               <Box display="flex" alignItems="center" mb={1}>
                                 <IconBriefcase size={16} style={{ marginRight: 8, color: 'text.secondary' }} />
                                 <Typography variant="body2" color="text.secondary">
-                                  Pharmacy Type
+                                  Location Type
                                 </Typography>
                               </Box>
                               <Chip 

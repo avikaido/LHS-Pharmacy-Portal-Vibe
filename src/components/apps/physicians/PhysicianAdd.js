@@ -139,7 +139,7 @@ return (
   <>
     <Box p={3} pb={1}>
       <Button color="primary" variant="contained" fullWidth onClick={toggle}>
-        Add New Physician
+        Add New Doctor
       </Button>
     </Box>
     <Dialog
@@ -150,11 +150,11 @@ return (
       aria-describedby="alert-dialog-description"
     >
       <DialogTitle id="alert-dialog-title" variant="h5">
-        {'Add New Physician'}
+        {'Add New Doctor'}
       </DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description">
-          Add a new physician you administer. Fill in all fields and click on the 'Submit' button.
+          Add a new doctor you administer. Fill in all fields and click on the 'Submit' button.
         </DialogContentText>
         <Box mt={3}>
           <form onSubmit={handleSubmit}>

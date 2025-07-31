@@ -32,7 +32,7 @@ const PharmacySearch = ({ onClick }) => {
         fullWidth
         size="small"
         value={searchTerm}
-        placeholder="Search Pharmacies"
+        placeholder="Search Locations"
         variant="outlined"
         onChange={(e) => dispatch(SearchPharmacy(e.target.value))}
       />

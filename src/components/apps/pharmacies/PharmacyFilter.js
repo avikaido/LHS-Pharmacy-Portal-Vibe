@@ -22,7 +22,7 @@ const PharmacyFilter = () => {
   const filterData = [
     {
       id: 2,
-      name: 'All',
+      name: 'All Locations',
       sort: 'show_all',
       icon: IconMail,
     },

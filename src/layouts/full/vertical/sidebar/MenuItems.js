@@ -158,19 +158,19 @@ const Menuitems = [
   },
   {
     id: uniqueId(),
-    title: 'Physicians',
+    title: 'Doctors',
     icon: IconStethoscope,
     chip: '1',
     chipColor: 'secondary',
-    href: '/apps/physicians',
+    href: '/apps/doctors',
   },
   {
     id: uniqueId(),
-    title: 'Pharmacies',
+    title: 'Locations',
     icon: IconBuildingHospital,
     chip: '3',
     chipColor: 'secondary',
-    href: '/apps/pharmacies',
+    href: '/apps/locations',
   },
   {
     id: uniqueId(),

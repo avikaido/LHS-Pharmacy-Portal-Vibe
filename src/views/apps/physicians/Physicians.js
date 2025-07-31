@@ -17,8 +17,8 @@ const Physicians = () => {
   const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   const mdUp = useMediaQuery((theme) => theme.breakpoints.up('md'));
   return (
-    <PageContainer title="Physicians" description="Physicians List Page">
-      <Breadcrumb title="Physicians" subtitle="Your Physicians" />
+    <PageContainer title="Doctors" description="Doctors List Page">
+      <Breadcrumb title="Doctors" subtitle="Your Doctors" />
       <AppCard>
         {/* ------------------------------------------- */}
         {/* Left Part */}

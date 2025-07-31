@@ -126,7 +126,7 @@ const PharmacyAdd = () => {
     <>
       <Box p={3} pb={1}>
         <Button color="primary" variant="contained" fullWidth onClick={toggle}>
-          Add New Pharmacy
+          Add New Location
         </Button>
       </Box>
       <Dialog
@@ -137,17 +137,17 @@ const PharmacyAdd = () => {
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title" variant="h5">
-          {'Add New Pharmacy'}
+          {'Add New Location'}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Add a new pharmacy you administer. Fill in the all fields and click on the 'Submit' button.
+            Add a new location you administer. Fill in the all fields and click on the 'Submit' button.
           </DialogContentText>
           <Box mt={3}>
             <form onSubmit={handleSubmit}>
               <Grid spacing={3} container>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>Pharmacy Name</FormLabel>
+                  <FormLabel>Location Name</FormLabel>
                   <TextField
                     id="pharmacy_name"
                     size="small"
@@ -158,7 +158,7 @@ const PharmacyAdd = () => {
                   />
                 </Grid>
                 <Grid item xs={12} lg={6}>
-                  <FormLabel>Pharmacy Type</FormLabel>
+                  <FormLabel>Location Type</FormLabel>
                   <CustomSelect
                     id="pharmacy_type"
                     value={values.pharmacy_type}

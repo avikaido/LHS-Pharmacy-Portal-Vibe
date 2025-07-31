@@ -22,7 +22,7 @@ const PhysicianFilter = () => {
   const filterData = [
     {
       id: 2,
-      name: 'All Physicians',
+      name: 'All Doctors',
       sort: 'show_all',
       icon: IconMail,
     },
