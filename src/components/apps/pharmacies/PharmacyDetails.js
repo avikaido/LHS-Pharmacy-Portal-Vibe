@@ -1260,55 +1260,86 @@ const PharmacyDetails = () => {
           </Box>
           {/* Dynamic Requests Table Section */}
           <Box mt={6}>
-            <Typography variant="h6" mb={2}>
-              Requests
-            </Typography>
-            <TableContainer>
-              <Table size="small" aria-label="requests table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell>Date/Time</TableCell>
-                    <TableCell>Patient</TableCell>
-                    <TableCell>Item</TableCell>
-                    <TableCell>Physician</TableCell>
-                    <TableCell>Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {requestsLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">Loading...</TableCell>
-                    </TableRow>
-                  ) : requests.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary' }}>
-                        No requests found for this pharmacy.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    requests.map((row) => (
-                      <TableRow key={row.id} hover>
-                        <TableCell>
-                          <MuiLink href={`/apps/request/detail/${row.id}`} underline="hover" color="primary" fontWeight={600}>
-                            {row.id}
-                          </MuiLink>
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={row.created_on ? new Date(row.created_on).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''} sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14, background: '#e3f2fd', color: '#039be5' }} />
-                        </TableCell>
-                        <TableCell>{row.patient_first_name} {row.patient_last_name}</TableCell>
-                        <TableCell>{row.item_generic_name}</TableCell>
-                        <TableCell>{row.doctor_first_name} {row.doctor_last_name}</TableCell>
-                        <TableCell>
-                          <Chip label={row.status?.charAt(0).toUpperCase() + row.status?.slice(1)} sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14, background: row.status === 'complete' ? '#1de9b6' : row.status === 'processing' ? '#82b1ff' : '#e0e0e0', color: row.status === 'complete' ? '#fff' : row.status === 'processing' ? '#fff' : '#333' }} />
-                        </TableCell>
+            <BlankCard sx={{ p: 0, borderRadius: 3, boxShadow: 0, border: '1px solid', borderColor: 'divider', background: 'background.paper' }}>
+              <Box p={3}>
+                <Typography variant="h6" color="primary" mb={2}>
+                  Requests
+                </Typography>
+                <TableContainer>
+                  <Table size="small" aria-label="requests table" sx={{ borderRadius: 2, overflow: 'hidden', background: 'background.paper' }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell><Typography variant="h6">ID</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Date/Time</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Patient</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Item</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Physician</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Status</Typography></TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {requestsLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center">Loading...</TableCell>
+                        </TableRow>
+                      ) : requests.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary' }}>
+                            No requests found for this pharmacy.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        requests.map((row) => {
+                          let chipColor = 'default';
+                          if (row.status) {
+                            const status = row.status.toLowerCase();
+                            if (status === 'processing') chipColor = 'primary';
+                            else if (status === 'complete') chipColor = 'success';
+                            else if (status === 'created') chipColor = 'warning';
+                            else if (status === 'pending') chipColor = 'info';
+                            else if (status === 'cancelled') chipColor = 'error';
+                          }
+                          return (
+                            <TableRow key={row.id} hover>
+                              <TableCell>
+                                <MuiLink href={`/apps/request/detail/${row.id}`} underline="hover" color="primary" fontWeight={600}>
+                                  {row.id}
+                                </MuiLink>
+                              </TableCell>
+                              <TableCell>
+                                <Chip label={row.created_on ? new Date(row.created_on).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''} sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14, background: '#e3f2fd', color: '#039be5' }} />
+                              </TableCell>
+                              <TableCell>
+                                {row.patient_id ? (
+                                  <MuiLink href={`/apps/patients/detail/${row.patient_id}`} underline="hover" color="primary" fontWeight={600}>
+                                    {row.patient_first_name} {row.patient_last_name}
+                                  </MuiLink>
+                                ) : (
+                                  <span>{row.patient_first_name} {row.patient_last_name}</span>
+                                )}
+                              </TableCell>
+                              <TableCell>{row.item_generic_name}</TableCell>
+                              <TableCell>
+                                {row.physician_id ? (
+                                  <MuiLink href={`/apps/physicians/detail/${row.physician_id}`} underline="hover" color="primary" fontWeight={600}>
+                                    {row.doctor_first_name} {row.doctor_last_name}
+                                  </MuiLink>
+                                ) : (
+                                  <span>{row.doctor_first_name} {row.doctor_last_name}</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Chip label={row.status?.charAt(0).toUpperCase() + row.status?.slice(1)} color={chipColor} size="small" sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14 }} />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </BlankCard>
           </Box>
         </>
       ) : (
