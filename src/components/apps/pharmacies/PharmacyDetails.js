@@ -34,6 +34,7 @@ import {
   deletePharmacy,
   restorePharmacy,
 } from 'src/store/apps/pharmacies/PharmacySlice';
+import { fetchPharmacists } from 'src/store/apps/pharmacists/PharmacistSlice';
 import { 
   IconPencil, 
   IconTrash, 
@@ -129,6 +130,10 @@ const PharmacyDetails = () => {
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
 
+  // Pharmacists state
+  const [pharmacists, setPharmacists] = useState([]);
+  const [pharmacistsLoading, setPharmacistsLoading] = useState(false);
+
   // Initialize original values when entering edit mode
   React.useEffect(() => {
     if (editPharmacy && pharmacyDetail && !originalValues) {
@@ -163,6 +168,24 @@ const PharmacyDetails = () => {
         setRequestsLoading(false);
       });
   }, [pharmacyDetail?.id]);
+
+  // Fetch pharmacists for this pharmacy
+  useEffect(() => {
+    if (!pharmacyDetail?.id) return;
+    setPharmacistsLoading(true);
+    // For now, fetch all pharmacists. Later we can filter by pharmacy_id when the API supports it
+    dispatch(fetchPharmacists())
+      .then((result) => {
+        if (result.payload) {
+          setPharmacists(result.payload);
+        }
+        setPharmacistsLoading(false);
+      })
+      .catch(() => {
+        setPharmacists([]);
+        setPharmacistsLoading(false);
+      });
+  }, [pharmacyDetail?.id, dispatch]);
 
   // Debug: log the SVG string
   console.log('qrSvg:', qrSvg);
@@ -1273,7 +1296,7 @@ const PharmacyDetails = () => {
                         <TableCell><Typography variant="h6">Date/Time</Typography></TableCell>
                         <TableCell><Typography variant="h6">Patient</Typography></TableCell>
                         <TableCell><Typography variant="h6">Item</Typography></TableCell>
-                        <TableCell><Typography variant="h6">Physician</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Doctor</Typography></TableCell>
                         <TableCell><Typography variant="h6">Status</Typography></TableCell>
                       </TableRow>
                     </TableHead>
@@ -1307,7 +1330,7 @@ const PharmacyDetails = () => {
                                 </MuiLink>
                               </TableCell>
                               <TableCell>
-                                <Chip label={row.created_on ? new Date(row.created_on).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''} sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14, background: '#e3f2fd', color: '#039be5' }} />
+                                <Chip label={row.created_on ? new Date(row.created_on).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''} sx={{ borderRadius: 2, fontWeight: 500, fontSize: 11, background: '#e3f2fd', color: '#039be5' }} />
                               </TableCell>
                               <TableCell>
                                 {row.patient_id ? (
@@ -1321,7 +1344,7 @@ const PharmacyDetails = () => {
                               <TableCell>{row.item_generic_name}</TableCell>
                               <TableCell>
                                 {row.physician_id ? (
-                                  <MuiLink href={`/apps/physicians/detail/${row.physician_id}`} underline="hover" color="primary" fontWeight={600}>
+                                  <MuiLink href={`/apps/doctors/detail/${row.physician_id}`} underline="hover" color="primary" fontWeight={600}>
                                     {row.doctor_first_name} {row.doctor_last_name}
                                   </MuiLink>
                                 ) : (
@@ -1329,7 +1352,82 @@ const PharmacyDetails = () => {
                                 )}
                               </TableCell>
                               <TableCell>
-                                <Chip label={row.status?.charAt(0).toUpperCase() + row.status?.slice(1)} color={chipColor} size="small" sx={{ borderRadius: 2, fontWeight: 500, fontSize: 14 }} />
+                                <Chip label={row.status?.charAt(0).toUpperCase() + row.status?.slice(1)} color={chipColor} size="small" sx={{ borderRadius: 2, fontWeight: 500, fontSize: 11 }} />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </BlankCard>
+          </Box>
+
+          {/* Associated Pharmacists Table Section */}
+          <Box mt={6}>
+            <BlankCard sx={{ p: 0, borderRadius: 3, boxShadow: 0, border: '1px solid', borderColor: 'divider', background: 'background.paper' }}>
+              <Box p={3}>
+                <Typography variant="h6" color="primary" mb={2}>
+                  Associated Pharmacists
+                </Typography>
+                <TableContainer>
+                  <Table size="small" aria-label="pharmacists table" sx={{ borderRadius: 2, overflow: 'hidden', background: 'background.paper' }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell><Typography variant="h6">Name</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Email</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Phone</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Department</Typography></TableCell>
+                        <TableCell><Typography variant="h6">License</Typography></TableCell>
+                        <TableCell><Typography variant="h6">Status</Typography></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {pharmacistsLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center">Loading...</TableCell>
+                        </TableRow>
+                      ) : pharmacists.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary' }}>
+                            No pharmacists associated with this location.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        pharmacists.map((pharmacist) => {
+                          let chipColor = 'default';
+                          if (pharmacist.status) {
+                            const status = pharmacist.status.toLowerCase();
+                            if (status === 'active') chipColor = 'success';
+                            else if (status === 'inactive') chipColor = 'error';
+                            else if (status === 'pending') chipColor = 'warning';
+                          }
+                          return (
+                            <TableRow key={pharmacist.id} hover>
+                              <TableCell>
+                                <MuiLink href={`/apps/pharmacists/detail/${pharmacist.id}`} underline="hover" color="primary" fontWeight={600}>
+                                  {pharmacist.firstname} {pharmacist.lastname}
+                                </MuiLink>
+                              </TableCell>
+                              <TableCell>{pharmacist.email}</TableCell>
+                              <TableCell>{pharmacist.phone}</TableCell>
+                              <TableCell>{pharmacist.department}</TableCell>
+                              <TableCell>
+                                <Chip 
+                                  label={pharmacist.licenseNumber || 'N/A'} 
+                                  size="small" 
+                                  sx={{ borderRadius: 2, fontWeight: 500, fontSize: 11, background: '#f5f5f5', color: '#666' }} 
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Chip 
+                                  label={pharmacist.status?.charAt(0).toUpperCase() + pharmacist.status?.slice(1) || 'Active'} 
+                                  color={chipColor} 
+                                  size="small" 
+                                  sx={{ borderRadius: 2, fontWeight: 500, fontSize: 11 }} 
+                                />
                               </TableCell>
                             </TableRow>
                           );

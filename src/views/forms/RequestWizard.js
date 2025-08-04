@@ -31,7 +31,7 @@ import { fetchItems, SearchItem } from '../../store/apps/items/ItemSlice';
 import axios from 'axios';
 import Logo from 'src/layouts/full/shared/logo/Logo';
 
-const steps = ['Search Medication', 'Physician Info', 'Patient Info', 'Finish'];
+const steps = ['Start Request', 'Doctor Info', 'Patient Info', 'Finish'];
 
 // Mapping of conditions to commonly prescribed medications
 const conditionToMedications = {
@@ -772,7 +772,7 @@ const RequestWizard = () => {
   const renderPharmacyDetails = () => (
     <Box mt={4} p={2} sx={{ backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
       <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
-        Selected Pharmacy
+        Selected Location
       </Typography>
       <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
         {pharmacyDetails.name}
@@ -788,23 +788,24 @@ const RequestWizard = () => {
       case 0: // Search Medication
         return (
           <Box>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Search by medication name (brand or generic) or by condition/symptom.
+            <Box sx={{ textAlign: 'left', mb: 3 }}>
+            <Typography sx={{ color: 'text.secondary' }}>
+                    Already know what you need? Just type the name of your medication, condition, or DME device in the search box below:
             </Typography>
-
+            </Box>
             {/* Show both forms if adding medication or if no medications selected */}
             {(!selectedItems.length || isAddingMedication) && (
               <>
                 {/* Filterable Search Form */}
                 <Box mb={4}>
-                  <CustomFormLabel htmlFor="search">Search Medication or Condition</CustomFormLabel>
+                  <CustomFormLabel htmlFor="search">Search by Medication, Condition, or DME</CustomFormLabel>
                   <CustomTextField
                     id="search"
                     variant="outlined"
                     fullWidth
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by medication name or condition..."
+                    placeholder="Example: 'Nexium', 'Acetaminophen', 'Wheelchair'"
                   />
                   {filteredItems.length > 0 && (
                     <List 
@@ -857,9 +858,14 @@ const RequestWizard = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', my: 3 }}>
                   <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
                   <Typography sx={{ mx: 2, color: 'text.secondary' }}>
-                    OR describe your condition in detail for a more thorough analysis
+                    OR
                   </Typography>
                   <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+                </Box>
+                <Box sx={{ textAlign: 'left', mb: 3 }}>
+                  <Typography sx={{ color: 'text.secondary' }}>
+                    If you're not sure which product you need, our smart AI tool can assist. Just describe your condition or need in the search bar below:
+                  </Typography>
                 </Box>
 
                 {/* LLM Condition/Symptom Form */}
@@ -873,7 +879,7 @@ const RequestWizard = () => {
                     fullWidth
                     value={conditionDescription}
                     onChange={(e) => setConditionDescription(e.target.value)}
-                    placeholder="Please describe your condition, symptoms, and any relevant medical history..."
+                    placeholder="Example: 'I have a pain in my lower back', 'My chest is tight', 'I have a rash on my skin'"
                   />
                   <Box mt={2}>
                     <Button
@@ -1064,7 +1070,7 @@ const RequestWizard = () => {
             <Grid spacing={3} container>
               <Grid item xs={12} lg={12}>
                 <Typography variant="h6" fontWeight="500">
-                  Search for your physician/provider by first selecting the state and then typing in their last and first name.
+                  Search for your doctor/provider by first selecting the state and then typing in their last and first name.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                   Fields marked with <Typography component="span" color="error" fontWeight={700}>*</Typography> are required.
@@ -1087,7 +1093,7 @@ const RequestWizard = () => {
                 </CustomSelect>
               </Grid>
               <Grid item xs={12} lg={4}>
-                <CustomFormLabel htmlFor="physician-last">Physician Last Name</CustomFormLabel>
+                <CustomFormLabel htmlFor="physician-last">Doctor Last Name</CustomFormLabel>
                 <CustomTextField
                   id="physician-last"
                   variant="outlined"
@@ -1100,7 +1106,7 @@ const RequestWizard = () => {
                 />
               </Grid>
               <Grid item xs={12} lg={4}>
-                <CustomFormLabel htmlFor="physician-first">Physician First Name</CustomFormLabel>
+                <CustomFormLabel htmlFor="physician-first">Doctor First Name</CustomFormLabel>
                 <CustomTextField
                   id="physician-first"
                   variant="outlined"
@@ -1135,8 +1141,8 @@ const RequestWizard = () => {
                       }}
                     >
                       <ListItemText
-                        primary={<span style={{ fontWeight: 700 }}>Can't Find My Physician</span>}
-                        secondary={<span>I will enter my physician manually</span>}
+                        primary={<span style={{ fontWeight: 700 }}>Can't Find My Doctor</span>}
+                        secondary={<span>I will enter my doctor manually</span>}
                         primaryTypographyProps={{ sx: { fontWeight: 700, transition: 'color 0.2s' } }}
                         secondaryTypographyProps={{ sx: { transition: 'color 0.2s' } }}
                       />
@@ -1176,7 +1182,7 @@ const RequestWizard = () => {
             {/* Manual Physician Data Entry Form - Only show first name, last name, city, state */}
             <Box mt={4} p={2} sx={{ backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
               <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
-                Physician Information
+                Doctor Information
               </Typography>
               <Grid container spacing={1.5}>
                 <Grid item xs={12} md={6}>
@@ -2112,7 +2118,21 @@ const RequestWizard = () => {
               </Box>
               {/* End Added */}
               {/* ------------------------------------------- */}  
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+          <Stepper 
+            activeStep={activeStep} 
+            sx={{ 
+              mb: 4,
+              '& .MuiStepIcon-root': {
+                color: '#90caf9', // More visible light blue for incomplete steps
+                '&.Mui-active': {
+                  color: '#4caf50', // Green for current step
+                },
+                '&.Mui-completed': {
+                  color: '#4caf50', // Green for completed steps
+                },
+              },
+            }}
+          >
             {steps.map((label, index) => {
               const stepProps = {};
               const labelProps = {};
