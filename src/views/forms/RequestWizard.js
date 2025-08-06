@@ -28,8 +28,9 @@ import ParentCard from '../../components/shared/ParentCard';
 import { Stack } from '@mui/system';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchItems, SearchItem } from '../../store/apps/items/ItemSlice';
-import axios from 'axios';
+import axios from '../../utils/axios';
 import Logo from 'src/layouts/full/shared/logo/Logo';
+import { useParams } from 'react-router-dom';
 
 const steps = ['Start Request', 'Doctor Info', 'Patient Info', 'Finish'];
 
@@ -247,6 +248,7 @@ const clean = str => str.replace(/^(generic:|brand:)/i, '').trim();
 const RequestWizard = () => {
   const dispatch = useDispatch();
   const itemsData = useSelector((state) => state.itemReducer.items);
+  const { uuid } = useParams(); // Get UUID from URL parameters
 
   const [activeStep, setActiveStep] = React.useState(0);
   const [skipped, setSkipped] = React.useState(new Set());
@@ -273,6 +275,17 @@ const RequestWizard = () => {
     name: '',
     address: ''
   });
+  const [requestIds, setRequestIds] = useState([]); // Store the created request IDs for each item
+  const [userInteractionData, setUserInteractionData] = useState({
+    pageLoadTime: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    screenResolution: `${window.screen.width}x${window.screen.height}`,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language: navigator.language,
+    referrer: document.referrer || 'direct',
+    sessionStartTime: new Date().toISOString()
+  });
+  const [loadingPharmacy, setLoadingPharmacy] = useState(false); // Loading state for pharmacy details
   const [selectedCondition, setSelectedCondition] = useState('');
   const [conditionSearchTerm, setConditionSearchTerm] = useState('');
   const [filteredConditions, setFilteredConditions] = useState([]);
@@ -328,20 +341,208 @@ const RequestWizard = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    // Get URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const pharmacyID = urlParams.get('pharmacyID');
-    const pharmacyName = urlParams.get('pharmacyName');
-    const pharmacyAddress = urlParams.get('pharmacyAddress');
+    console.log('UUID from URL params:', uuid);
+    // If UUID is provided in URL, fetch pharmacy details from backend
+    if (uuid) {
+      const fetchPharmacyDetails = async () => {
+        try {
+          setLoadingPharmacy(true);
+          console.log('Fetching pharmacy details for UUID:', uuid);
+          const response = await axios.get(`/api/pharmacies/uuid/${uuid}`);
+          console.log('Pharmacy API response:', response.data);
+          if (response.data.success && response.data.data) {
+            const pharmacy = response.data.data;
+            console.log('Setting pharmacy details:', pharmacy);
+            const newPharmacyDetails = {
+              id: pharmacy.id,
+              name: pharmacy.pharmacy_name,
+              address: pharmacy.address
+            };
+            console.log('Setting pharmacy details:', newPharmacyDetails);
+            setPharmacyDetails(newPharmacyDetails);
+          }
+        } catch (error) {
+          console.error('Error fetching pharmacy details:', error);
+          // Fallback to query parameters if UUID fetch fails
+          const urlParams = new URLSearchParams(window.location.search);
+          const pharmacyID = urlParams.get('pharmacyID');
+          const pharmacyName = urlParams.get('pharmacyName');
+          const pharmacyAddress = urlParams.get('pharmacyAddress');
 
-    if (pharmacyID && pharmacyName && pharmacyAddress) {
-      setPharmacyDetails({
-        id: pharmacyID,
-        name: pharmacyName,
-        address: pharmacyAddress
+          if (pharmacyID && pharmacyName && pharmacyAddress) {
+            setPharmacyDetails({
+              id: pharmacyID,
+              name: pharmacyName,
+              address: pharmacyAddress
+            });
+          }
+        } finally {
+          setLoadingPharmacy(false);
+        }
+      };
+      
+      fetchPharmacyDetails();
+    } else {
+      // Fallback to query parameters if no UUID
+      const urlParams = new URLSearchParams(window.location.search);
+      const pharmacyID = urlParams.get('pharmacyID');
+      const pharmacyName = urlParams.get('pharmacyName');
+      const pharmacyAddress = urlParams.get('pharmacyAddress');
+
+      if (pharmacyID && pharmacyName && pharmacyAddress) {
+        setPharmacyDetails({
+          id: pharmacyID,
+          name: pharmacyName,
+          address: pharmacyAddress
+        });
+      }
+    }
+  }, [uuid]);
+
+  // Format LLM conversation data for storage
+  const formatLLMConversation = (conversationHistory, llmResponse, conditionDescription, followUpQuestion, userResponse) => {
+    if (!conversationHistory.length && !llmResponse) {
+      return null; // No LLM interaction
+    }
+    
+    return {
+      conversation_history: conversationHistory,
+      final_llm_response: llmResponse,
+      condition_description: conditionDescription,
+      follow_up_question: followUpQuestion,
+      user_response: userResponse,
+      conversation_timestamp: new Date().toISOString(),
+      total_messages: conversationHistory.length + (llmResponse ? 1 : 0),
+      conversation_summary: `LLM-assisted medication selection. Condition: ${conditionDescription || 'Not specified'}. ${conversationHistory.length} conversation turns.`
+    };
+  };
+
+  // Generate a human-readable conversation transcript for doctors
+  const generateConversationTranscript = (llmConversationData) => {
+    if (!llmConversationData) {
+      return null;
+    }
+    
+    let transcript = `AI-ASSISTED MEDICATION SELECTION CONVERSATION\n`;
+    transcript += `=============================================\n\n`;
+    transcript += `Date: ${new Date(llmConversationData.conversation_timestamp).toLocaleString()}\n`;
+    transcript += `Condition: ${llmConversationData.condition_description || 'Not specified'}\n`;
+    transcript += `Total conversation turns: ${llmConversationData.total_messages}\n\n`;
+    
+    // Add conversation history
+    if (llmConversationData.conversation_history && llmConversationData.conversation_history.length > 0) {
+      transcript += `CONVERSATION HISTORY:\n`;
+      transcript += `-------------------\n`;
+      llmConversationData.conversation_history.forEach((message, index) => {
+        transcript += `${index + 1}. ${message.role === 'user' ? 'Patient' : 'AI Assistant'}: ${message.content}\n\n`;
       });
     }
-  }, []);
+    
+    // Add final LLM response if different from conversation history
+    if (llmConversationData.final_llm_response && !llmConversationData.conversation_history.some(msg => msg.content === llmConversationData.final_llm_response)) {
+      transcript += `FINAL AI RECOMMENDATION:\n`;
+      transcript += `----------------------\n`;
+      transcript += `${llmConversationData.final_llm_response}\n\n`;
+    }
+    
+    // Add follow-up question and user response if present
+    if (llmConversationData.follow_up_question) {
+      transcript += `FOLLOW-UP QUESTION:\n`;
+      transcript += `------------------\n`;
+      transcript += `${llmConversationData.follow_up_question}\n\n`;
+    }
+    
+    if (llmConversationData.user_response) {
+      transcript += `PATIENT RESPONSE:\n`;
+      transcript += `----------------\n`;
+      transcript += `${llmConversationData.user_response}\n\n`;
+    }
+    
+    transcript += `=============================================\n`;
+    transcript += `This conversation was conducted through our AI-assisted medication selection system.\n`;
+    transcript += `The patient selected the recommended medication based on this conversation.\n`;
+    
+    return transcript;
+  };
+
+  // Delete orphaned requests (requests for items that were removed)
+  const cleanupOrphanedRequests = async (currentRequestIds, currentSelectedItems) => {
+    // If we have more request IDs than selected items, some requests are orphaned
+    if (currentRequestIds.length > currentSelectedItems.length) {
+      const orphanedRequestIds = currentRequestIds.slice(currentSelectedItems.length);
+      console.log('Cleaning up orphaned requests:', orphanedRequestIds);
+      
+      for (const requestId of orphanedRequestIds) {
+        try {
+          await axios.delete(`/api/requests/${requestId}`);
+          console.log(`Deleted orphaned request: ${requestId}`);
+        } catch (error) {
+          console.error(`Error deleting orphaned request ${requestId}:`, error);
+        }
+      }
+    }
+  };
+
+  // Create separate requests for each selected item when user moves to next step
+  const createRequests = async () => {
+    if (pharmacyDetails.id && selectedItems.length > 0) {
+      try {
+        console.log('Creating requests for pharmacy ID:', pharmacyDetails.id);
+        console.log('Current requestIds:', requestIds);
+        console.log('Current selectedItems:', selectedItems);
+        
+        const newRequestIds = [];
+        
+        // Create requests for all selected items that don't already have requests
+        for (let i = 0; i < selectedItems.length; i++) {
+          // Check if this item already has a request
+          if (requestIds[i]) {
+            console.log(`Item ${i} (${selectedItems[i].brand_name}) already has request ID: ${requestIds[i]}`);
+            newRequestIds.push(requestIds[i]); // Keep the existing request ID
+            continue;
+          }
+          
+          const item = selectedItems[i];
+          const itemNote = medicationNotes[i] || ''; // Get item-specific notes
+          
+          // Check if this item was selected through LLM assistance
+          const wasLLMSelected = conversationHistory.length > 0 || llmResponse;
+          const llmConversationData = wasLLMSelected ? 
+            formatLLMConversation(conversationHistory, llmResponse, conditionDescription, followUpQuestion, userResponse) : 
+            null;
+          
+          const requestData = {
+            pharmacy_id: pharmacyDetails.id,
+            patient_id: null, // Will be updated when patient info is provided
+            physician_id: null, // Will be updated when physician info is provided
+            item_id: item.id, // Reference the item ID from items table
+            status: 'draft',
+            notes: itemNote || `Request for ${item.brand_name} (${item.generic_name})`,
+            // Additional administrative data
+            visibility: 'public',
+            version: 1,
+            requested_date: new Date().toISOString(),
+            llm_conversation: llmConversationData,
+            change_log: `Request created via wizard for item: ${item.brand_name} (${item.generic_name}). ${wasLLMSelected ? 'LLM-assisted selection.' : 'Direct selection.'} Source: UUID-based QR code link. User agent: ${userInteractionData.userAgent}. Screen: ${userInteractionData.screenResolution}. Timezone: ${userInteractionData.timezone}. Language: ${userInteractionData.language}. Referrer: ${userInteractionData.referrer}. Session start: ${userInteractionData.sessionStartTime}. Timestamp: ${new Date().toISOString()}`
+          };
+          
+          console.log(`Creating request for item ${i + 1} (${item.brand_name}):`, requestData);
+          const response = await axios.post('/api/requests', requestData);
+          
+          if (response.data && response.data.id) {
+            newRequestIds.push(response.data.id);
+            console.log(`Created request with ID: ${response.data.id} for ${item.brand_name}`);
+          }
+        }
+        
+        setRequestIds(newRequestIds);
+        console.log('All requests (existing + new):', newRequestIds);
+        
+      } catch (error) {
+        console.error('Error creating requests:', error);
+      }
+    }
+  };
 
   useEffect(() => {
     if (searchTerm) {
@@ -425,11 +626,27 @@ const RequestWizard = () => {
   const isStepOptional = (step) => step === 3;
   const isStepSkipped = (step) => skipped.has(step);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     let newSkipped = skipped;
     if (isStepSkipped(activeStep)) {
       newSkipped = new Set(newSkipped.values());
       newSkipped.delete(activeStep);
+    }
+
+    // If moving from step 0 (item selection) to step 1 (doctor info), validate and create requests
+    if (activeStep === 0) {
+      if (selectedItems.length === 0) {
+        alert('Please select at least one medication or DME device before proceeding.');
+        return;
+      }
+      await createRequests();
+    }
+    
+    // Additional validation: if we're on any step and have no items, go back to step 0
+    if (selectedItems.length === 0 && activeStep > 0) {
+      alert('No medications selected. Returning to medication selection.');
+      setActiveStep(0);
+      return;
     }
 
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -487,6 +704,13 @@ const RequestWizard = () => {
     setConditionDescription('');
     setUserResponse('');
     setIsAnalyzing(false);
+    
+    // Initialize empty notes for the new item
+    const newItemIndex = selectedItems.length;
+    setMedicationNotes(prev => ({
+      ...prev,
+      [newItemIndex]: ''
+    }));
   };
 
   const handleSelectPhysician = async (physician) => {
@@ -754,12 +978,45 @@ const RequestWizard = () => {
 
   const handleRemoveMedication = (index) => {
     setSelectedItems(prev => prev.filter((_, i) => i !== index));
-    // Also remove the notes for this medication
+    
+    // Reindex the notes after removing an item
     setMedicationNotes(prev => {
-      const newNotes = { ...prev };
-      delete newNotes[index];
+      const newNotes = {};
+      let newIndex = 0;
+      for (let i = 0; i < selectedItems.length; i++) {
+        if (i !== index) {
+          newNotes[newIndex] = prev[i] || '';
+          newIndex++;
+        }
+      }
       return newNotes;
     });
+    
+    // If we have requests and we're removing an item, we need to handle the request IDs
+    if (requestIds.length > 0) {
+      const removedRequestId = requestIds[index];
+      
+      // Remove the request ID for the removed item
+      setRequestIds(prev => prev.filter((_, i) => i !== index));
+      
+      // Delete the request from the database
+      if (removedRequestId) {
+        const deleteRequest = async () => {
+          try {
+            await axios.delete(`/api/requests/${removedRequestId}`);
+            console.log(`Deleted request ${removedRequestId} for removed item`);
+          } catch (error) {
+            console.error(`Error deleting request ${removedRequestId}:`, error);
+          }
+        };
+        deleteRequest();
+      }
+      
+      // If we're on step 1 or later and now have no items, we should go back to step 0
+      if (activeStep > 0 && selectedItems.length === 1) { // 1 because we haven't updated selectedItems yet
+        setActiveStep(0);
+      }
+    }
   };
 
   const handleMedicationNoteChange = (index, note) => {
@@ -767,6 +1024,22 @@ const RequestWizard = () => {
       ...prev,
       [index]: note
     }));
+    
+    // If this item already has a request, update it with the new note
+    if (requestIds[index]) {
+      const updateRequest = async () => {
+        try {
+          const item = selectedItems[index];
+          await axios.put(`/api/requests/${requestIds[index]}`, {
+            notes: note || `Request for ${item.brand_name} (${item.generic_name})`,
+            change_log: `Notes updated via wizard for ${item.brand_name} (${item.generic_name})`
+          });
+        } catch (error) {
+          console.error('Error updating request notes:', error);
+        }
+      };
+      updateRequest();
+    }
   };
 
   const renderPharmacyDetails = () => (
@@ -774,12 +1047,23 @@ const RequestWizard = () => {
       <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
         Selected Location
       </Typography>
-      <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
-        {pharmacyDetails.name}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 0 }}>
-        {pharmacyDetails.address}
-      </Typography>
+      {loadingPharmacy ? (
+        <Box display="flex" alignItems="center" gap={1}>
+          <CircularProgress size={16} />
+          <Typography variant="body2" color="text.secondary">
+            Loading pharmacy details...
+          </Typography>
+        </Box>
+      ) : (
+        <>
+          <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
+            {pharmacyDetails.name || 'No pharmacy selected'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0 }}>
+            {pharmacyDetails.address || 'Please select a pharmacy'}
+          </Typography>
+        </>
+      )}
     </Box>
   );
 

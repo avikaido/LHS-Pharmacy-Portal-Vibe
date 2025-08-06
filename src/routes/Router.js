@@ -171,6 +171,7 @@ const Router = [
       // Added - Requests - V1.0
       { path: '', element: <Navigate to="/landingpage" /> },
       { path: 'request-wizard', element: <RequestWizard /> },
+      { path: 'request-wizard/:uuid', element: <RequestWizard /> },
       // End Added
       { path: 'auth/404', element: <Error /> },
       { path: 'auth/login2', element: <Login /> },

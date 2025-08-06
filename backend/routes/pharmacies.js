@@ -157,6 +157,68 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET single pharmacy by UUID
+router.get('/uuid/:uuid', async (req, res) => {
+  try {
+    const { uuid } = req.params;
+    
+    const query = `
+      SELECT 
+        id,
+        uuid,
+        slug,
+        created_on,
+        created_by,
+        updated_on,
+        updated_by,
+        deleted,
+        deleted_on,
+        deleted_by,
+        visibility,
+        version,
+        previous_id,
+        change_log,
+        status,
+        pharmacy_name,
+        pharmacy_type,
+        phone,
+        fax,
+        email,
+        website,
+        address,
+        business_hours,
+        license_number,
+        license_expiration,
+        npi_number,
+        insurance_accepted,
+        services_offered,
+        chain_name,
+        contact_person as manager_name,
+        notes
+      FROM pharmacies 
+      WHERE uuid = $1 AND deleted = false
+    `;
+    
+    const { rows } = await pool.query(query, [uuid]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Pharmacy not found' 
+      });
+    }
+    
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('Error fetching pharmacy by UUID:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch pharmacy',
+      details: error.message 
+    });
+  }
+});
+
 // GET single pharmacy by ID
 router.get('/:id', async (req, res) => {
   try {

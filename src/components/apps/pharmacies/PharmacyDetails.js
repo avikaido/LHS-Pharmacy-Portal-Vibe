@@ -145,9 +145,17 @@ const PharmacyDetails = () => {
     ? 'https://app.askyourprimary.com/api/barcode/generate'
     : 'http://localhost:5002/api/barcode/generate';
 
+  // Helper function to generate request wizard URL with UUID
+  const getRequestWizardUrl = (uuid) => {
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://app.askyourprimary.com'
+      : 'http://localhost:5174';
+    return `${baseUrl}/request-wizard/${uuid}`;
+  };
+
   useEffect(() => {
     if (pharmacyDetail && pharmacyDetail.uuid) {
-      const qrUrl = `https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`;
+      const qrUrl = getRequestWizardUrl(pharmacyDetail.uuid);
       axios.get(`${API_BASE}?type=qr&text=${encodeURIComponent(qrUrl)}&format=svg&size=128`)
         .then(res => setQrSvg(res.data))
         .catch(() => setQrSvg(null));
@@ -766,7 +774,7 @@ const PharmacyDetails = () => {
                                     </Button>
                                   </Tooltip>
                                   <Tooltip title="Copy QR Link to Clipboard">
-                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && copyQrLinkToClipboard(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Copy QR code link to clipboard">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && copyQrLinkToClipboard(getRequestWizardUrl(pharmacyDetail.uuid))} aria-label="Copy QR code link to clipboard">
                                       Copy Link
                                     </Button>
                                   </Tooltip>
@@ -779,32 +787,32 @@ const PharmacyDetails = () => {
                                 {/* Social Share Buttons */}
                                 <Stack direction="row" spacing={2} mt={1}>
                                   <Tooltip title="Share via Email">
-                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByEmail(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via Email">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByEmail(getRequestWizardUrl(pharmacyDetail.uuid))} aria-label="Share QR code via Email">
                                       <IconMail size={16} />
                                     </Button>
                                   </Tooltip>
                                   <Tooltip title="Share via SMS">
-                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrBySms(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via SMS">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrBySms(getRequestWizardUrl(pharmacyDetail.uuid))} aria-label="Share QR code via SMS">
                                       <IconMessage size={16} />
                                     </Button>
                                   </Tooltip>
                                   <Tooltip title="Share via WhatsApp">
-                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByWhatsApp(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via WhatsApp">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByWhatsApp(getRequestWizardUrl(pharmacyDetail.uuid))} aria-label="Share QR code via WhatsApp">
                                       <IconBrandWhatsapp size={16} />
                                     </Button>
                                   </Tooltip>
                                   <Tooltip title="Share via Facebook">
-                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByFacebook(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via Facebook">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByFacebook(getRequestWizardUrl(pharmacyDetail.uuid))} aria-label="Share QR code via Facebook">
                                       <IconBrandFacebook size={16} />
                                     </Button>
                                   </Tooltip>
                                   <Tooltip title="Share via Twitter/X">
-                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByTwitter(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via Twitter/X">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByTwitter(getRequestWizardUrl(pharmacyDetail.uuid))} aria-label="Share QR code via Twitter/X">
                                       <IconBrandTwitter size={16} />
                                     </Button>
                                   </Tooltip>
                                   <Tooltip title="Share via LinkedIn">
-                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByLinkedIn(`https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`)} aria-label="Share QR code via LinkedIn">
+                                    <Button variant="outlined" size="small" onClick={() => pharmacyDetail && pharmacyDetail.uuid && shareQrByLinkedIn(getRequestWizardUrl(pharmacyDetail.uuid))} aria-label="Share QR code via LinkedIn">
                                       <IconBrandLinkedin size={16} />
                                     </Button>
                                   </Tooltip>
@@ -827,21 +835,21 @@ const PharmacyDetails = () => {
                                   )}
                                   {pharmacyDetail && pharmacyDetail.uuid && (
                                     <Tooltip title="Download vCard">
-                                      <Button variant="outlined" size="small" onClick={() => downloadPharmacyVCard(pharmacyDetail, `https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}`, 'pharmacy.vcf')} aria-label="Download vCard">
+                                      <Button variant="outlined" size="small" onClick={() => downloadPharmacyVCard(pharmacyDetail, getRequestWizardUrl(pharmacyDetail.uuid), 'pharmacy.vcf')} aria-label="Download vCard">
                                         <IconId size={16} />
                                       </Button>
                                     </Tooltip>
                                   )}
                                   {brandedQrSvg && pharmacyDetail && (
                                     <Tooltip title="Show QR Info">
-                                      <Button variant="outlined" size="small" onClick={() => showQrInfoModal(brandedQrSvg, pharmacyDetail, pharmacyDetail.uuid ? `https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}` : '', 'Pharmacy QR Code & Info')} aria-label="Show QR code info">
+                                      <Button variant="outlined" size="small" onClick={() => showQrInfoModal(brandedQrSvg, pharmacyDetail, pharmacyDetail.uuid ? getRequestWizardUrl(pharmacyDetail.uuid) : '', 'Pharmacy QR Code & Info')} aria-label="Show QR code info">
                                         Show QR Info
                                       </Button>
                                     </Tooltip>
                                   )}
                                   {brandedQrSvg && pharmacyDetail && (
                                     <Tooltip title="Custom Embed Options">
-                                      <Button variant="outlined" size="small" onClick={() => showQrEmbedModal(brandedQrSvg, pharmacyDetail, pharmacyDetail.uuid ? `https://app.askyourprimary.com/request-wizard?pharmacyID=${encodeURIComponent(pharmacyDetail.uuid)}` : '', 'Custom Embed QR Code', qrSize)} aria-label="Custom embed QR code">
+                                      <Button variant="outlined" size="small" onClick={() => showQrEmbedModal(brandedQrSvg, pharmacyDetail, pharmacyDetail.uuid ? getRequestWizardUrl(pharmacyDetail.uuid) : '', 'Custom Embed QR Code', qrSize)} aria-label="Custom embed QR code">
                                         Custom Embed
                                       </Button>
                                     </Tooltip>

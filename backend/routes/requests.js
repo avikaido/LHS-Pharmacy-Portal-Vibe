@@ -109,21 +109,22 @@ router.post('/', async (req, res) => {
             completed_date,
             change_log,
             visibility = 'public',
+            llm_conversation,
         } = req.body;
-        // Validate required fields
-        if (!pharmacy_id || !patient_id || !physician_id || !item_id) {
-            return res.status(400).json({ error: 'pharmacy_id, patient_id, physician_id, and item_id are required' });
+        // Validate required fields - only pharmacy_id is required initially
+        if (!pharmacy_id) {
+            return res.status(400).json({ error: 'pharmacy_id is required' });
         }
         const result = await pool.query(
             `INSERT INTO requests (
-                pharmacy_id, patient_id, physician_id, item_id, notes, status, requested_date, completed_date, change_log, visibility,
+                pharmacy_id, patient_id, physician_id, item_id, notes, status, requested_date, completed_date, change_log, visibility, llm_conversation,
                 created_on, created_by, updated_on, updated_by, version, deleted
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-                now(), $11, now(), $11, 1, false
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+                now(), $12, now(), $12, 1, false
             ) RETURNING *`,
             [
-                pharmacy_id, patient_id, physician_id, item_id, notes, status, requested_date, completed_date, change_log, visibility,
+                pharmacy_id, patient_id, physician_id, item_id, notes, status, requested_date, completed_date, change_log, visibility, llm_conversation,
                 req.user?.id || 1
             ]
         );
@@ -155,9 +156,10 @@ router.put('/:id', async (req, res) => {
         if (keys.length === 0) {
             return res.status(400).json({ error: 'No valid fields to update' });
         }
-        if (updates.item_id === undefined) {
-            return res.status(400).json({ error: 'item_id is required' });
-        }
+        // Remove the item_id requirement for updates
+        // if (updates.item_id === undefined) {
+        //     return res.status(400).json({ error: 'item_id is required' });
+        // }
         const setClause = keys.map((key, index) => `${key} = $${index + 2}`).join(', ');
         const values = [id, ...keys.map(key => updates[key])];
         const updateQuery = `
