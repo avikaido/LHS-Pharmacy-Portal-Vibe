@@ -1,5 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { DomainEvent, eventBus } from '../services/events/eventBus.js';
+import { buildRequestPayload } from '../services/events/payloadBuilders.js';
+import { fetchRequestEnrichedById } from '../services/events/enrichers.js';
 
 const router = express.Router();
 
@@ -128,7 +131,16 @@ router.post('/', async (req, res) => {
                 req.user?.id || 1
             ]
         );
-        res.status(201).json(result.rows[0]);
+        const created = result.rows[0];
+        // Emit RequestCreated event to outbox
+        const enrichedRow = await fetchRequestEnrichedById(created.id);
+        const event = new DomainEvent({
+            eventType: 'RequestCreated',
+            aggregate: { requestId: created.id },
+            payload: buildRequestPayload(enrichedRow || created),
+        });
+        eventBus.publish(event);
+        res.status(201).json(created);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });
@@ -172,7 +184,37 @@ router.put('/:id', async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Request not found' });
         }
-        res.json(result.rows[0]);
+        const updated = result.rows[0];
+        // Emit events for key transitions
+        const events = [];
+        if (updates.physician_id !== undefined) {
+            const enrichedRow = await fetchRequestEnrichedById(id);
+            events.push(new DomainEvent({
+              eventType: 'RequestPhysicianAssigned',
+              aggregate: { requestId: Number(id) },
+              payload: buildRequestPayload(enrichedRow || updated),
+            }));
+        }
+        if (updates.patient_id !== undefined) {
+            const enrichedRow = await fetchRequestEnrichedById(id);
+            events.push(new DomainEvent({
+              eventType: 'RequestPatientAttached',
+              aggregate: { requestId: Number(id) },
+              payload: buildRequestPayload(enrichedRow || updated),
+            }));
+        }
+        if (updates.status && updates.status.toLowerCase() === 'completed') {
+            const enrichedRow = await fetchRequestEnrichedById(id);
+            events.push(new DomainEvent({
+              eventType: 'RequestCompleted',
+              aggregate: { requestId: Number(id) },
+              payload: buildRequestPayload(enrichedRow || updated),
+            }));
+        }
+        if (events.length) {
+          await eventBus.publishBatch(events);
+        }
+        res.json(updated);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });

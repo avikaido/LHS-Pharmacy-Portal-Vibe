@@ -975,6 +975,7 @@ const RequestWizard = () => {
           })
         )
       );
+      // Optionally: future event for physician attached can be emitted server-side when we update status
     } catch (err) {
       console.error('Error updating requests with physician:', err);
     }
