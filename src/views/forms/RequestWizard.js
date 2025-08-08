@@ -588,10 +588,13 @@ const RequestWizard = () => {
       setPhysicianSuggestions([]);
       return;
     }
-    setLoadingPhysician(true);
-    try {
-      const fetchPhysicianSuggestions = async () => {
-        const response = await axios.get('/api/nhs/', {
+
+    const debounceFetch = setTimeout(async () => {
+      setLoadingPhysician(true);
+      try {
+        // Important: use absolute URL so it goes through Vite proxy (`/api/nhs`) on the same origin
+        const url = `${window.location.origin}/api/nhs/`;
+        const response = await axios.get(url, {
           params: {
             version: '2.1',
             last_name: searchTermPhysician,
@@ -605,14 +608,15 @@ const RequestWizard = () => {
         } else {
           setPhysicianSuggestions([]);
         }
-      };
-      const debounceFetch = setTimeout(fetchPhysicianSuggestions, 300);
-      return () => clearTimeout(debounceFetch);
-    } catch (error) {
-      console.error('Error fetching physician suggestions:', error.response?.data || error.message);
-    } finally {
-      setLoadingPhysician(false);
-    }
+      } catch (error) {
+        console.error('Error fetching physician suggestions:', error.response?.data || error.message);
+        setPhysicianSuggestions([]);
+      } finally {
+        setLoadingPhysician(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceFetch);
   }, [searchTermPhysician, searchTermPhysicianFirst, physicianState, physicianSearchLocked]);
 
   const handleChange2 = (event) => {
@@ -641,7 +645,15 @@ const RequestWizard = () => {
       }
       await createRequests();
     }
-    
+    // If moving away from step 1 (doctor info), persist physician selection across all requests
+    if (activeStep === 1) {
+      await savePhysicianSelectionIfPresent();
+    }
+    // If moving away from step 2 (patient info), persist patient info across all requests
+    if (activeStep === 2) {
+      await savePatientInfoIfPresent();
+    }
+
     // Additional validation: if we're on any step and have no items, go back to step 0
     if (selectedItems.length === 0 && activeStep > 0) {
       alert('No medications selected. Returning to medication selection.');
@@ -653,7 +665,7 @@ const RequestWizard = () => {
     setSkipped(newSkipped);
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     // Store current state before going back
     const currentState = {
       selectedItems,
@@ -664,7 +676,15 @@ const RequestWizard = () => {
       conditionDescription,
       searchTerm
     };
-    
+    // If leaving doctor step backwards, persist selection as well
+    if (activeStep === 1) {
+      await savePhysicianSelectionIfPresent();
+    }
+    // If leaving patient step backwards, persist patient as well
+    if (activeStep === 2) {
+      await savePatientInfoIfPresent();
+    }
+
     // Go back to previous step
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
     
@@ -757,6 +777,206 @@ const RequestWizard = () => {
       // Fallback to NPI data only
       const finalData = preparePhysicianDataForDatabase(initialForm, null);
       setFinalPhysicianData(finalData);
+    }
+  };
+
+  // Normalize ZIP to either 5 or 9-digit with optional dash (##### or #####-####)
+  const normalizeZip = (zip) => {
+    if (!zip) return undefined;
+    const digits = String(zip).replace(/\D/g, '');
+    if (digits.length >= 9) return `${digits.slice(0, 5)}-${digits.slice(5, 9)}`;
+    if (digits.length >= 5) return digits.slice(0, 5);
+    return undefined;
+  };
+
+  // Map form/final physician data to backend payload (snake_case)
+  const mapPhysicianToPayload = (data) => {
+    if (!data) return null;
+    const lastName = toTitleCase(data.lastName || data.last_name || '');
+    const firstName = toTitleCase(data.firstName || data.first_name || '');
+    const city = toTitleCase(data.city || '');
+    const stateAbbr = stateFullToAbbreviation[data.state] || (data.state ? data.state.toUpperCase() : '');
+    return {
+      first_name: firstName || undefined,
+      last_name: lastName || undefined,
+      phone: data.phone || undefined,
+      fax: data.fax || undefined,
+      email: data.email || undefined,
+      website: data.website || undefined,
+      address: data.address || undefined,
+      address2: data.address2 || undefined,
+      city: city || undefined,
+      state: stateAbbr || undefined,
+      zipcode: normalizeZip(data.zip || data.zipcode),
+      country: data.country || undefined,
+      npi_number: data.npi || data.npi_number || undefined,
+      dea_number: data.dea_number || undefined,
+      license_number: data.license_number || undefined,
+      specialty: data.specialty || undefined,
+      practice_name: data.practice_name || undefined,
+      practice_phone: data.practice_phone || undefined,
+      practice_fax: data.practice_fax || undefined,
+      notes: data.notes || undefined,
+    };
+  };
+
+  // Normalize patient zip as well
+  const normalizePatientZip = (zip) => {
+    if (!zip) return undefined;
+    const digits = String(zip).replace(/\D/g, '');
+    if (digits.length >= 9) return `${digits.slice(0, 5)}-${digits.slice(5, 9)}`;
+    if (digits.length >= 5) return digits.slice(0, 5);
+    return undefined;
+  };
+
+  // Create or find patient by email; return id
+  const upsertPatientAndGetId = async () => {
+    const email = (values.email || '').trim();
+    const firstName = values.firstname?.trim();
+    const lastName = values.lastname?.trim();
+    if (!email || !firstName || !lastName) return null; // require minimal fields
+
+    // 1) Try existing by email
+    try {
+      const res = await axios.get(`/api/patients/by-email/${encodeURIComponent(email)}`);
+      if (res?.data?.data?.id) return res.data.data.id;
+    } catch (_) {
+      // not found is fine
+    }
+
+    // 2) Create new patient record
+    try {
+      const safeMiddleInitial = (values.middlename || '').trim().charAt(0) || null;
+      const safePhone = (values.phone || '').trim() || 'unknown';
+      const safeAddress = (values.address || '').trim() || 'Unknown';
+      const safeCity = (values.city || '').trim() || 'Unknown';
+      const safeState = stateFullToAbbreviation[values.state] || (values.state ? values.state : 'NA');
+      const safeZip = normalizePatientZip(values.zipcode) || '00000';
+      const safeDob = values.dob || '1970-01-01';
+      const safeGender = values.gender || 'other';
+      const safeIns1 = values.insurance1 || 'unknown';
+      const safeIns1Id = values.insurance1id || 'unknown';
+      const payload = {
+        first_name: firstName,
+        middle_initial: safeMiddleInitial,
+        last_name: lastName,
+        phone: safePhone,
+        email,
+        address: safeAddress,
+        address2: values.address2?.trim() || null,
+        city: safeCity,
+        state: safeState,
+        zipcode: safeZip,
+        notes: null,
+        dob: safeDob,
+        gender: safeGender,
+        insurance1: safeIns1,
+        insurance1_id: safeIns1Id,
+        insurance2: values.insurance2 || null,
+        insurance2_id: values.insurance2id || null,
+      };
+      const createRes = await axios.post('/api/patients', payload);
+      return createRes?.data?.id || null;
+    } catch (err) {
+      console.error('Error creating patient:', err);
+      return null;
+    }
+  };
+
+  // Persist patient selection across all requests when leaving patient step (step 2)
+  const savePatientInfoIfPresent = async () => {
+    if (!requestIds?.length) return;
+    const patientId = await upsertPatientAndGetId();
+    if (!patientId) return;
+    const changeLog = `Patient attached via wizard: ${values.lastname}, ${values.firstname}. Timestamp: ${new Date().toISOString()}`;
+    try {
+      await Promise.all(
+        requestIds.map((id) =>
+          axios.put(`/api/requests/${id}`, {
+            patient_id: patientId,
+            change_log: changeLog,
+          })
+        )
+      );
+    } catch (err) {
+      console.error('Error updating requests with patient:', err);
+    }
+  };
+
+  // Try to find existing physician by NPI or by name/city/state
+  const findExistingPhysicianId = async (payload) => {
+    try {
+      const query = payload?.npi_number || `${payload?.last_name || ''} ${payload?.first_name || ''} ${payload?.city || ''} ${payload?.state || ''}`.trim();
+      if (!query) return null;
+      const res = await axios.get('/api/physicians', { params: { search: query, limit: 10, offset: 0 } });
+      const list = res?.data?.data || [];
+      if (payload?.npi_number) {
+        const byNpi = list.find((p) => p.npi_number === payload.npi_number);
+        if (byNpi?.id) return byNpi.id;
+      }
+      const match = list.find((p) =>
+        p.last_name?.toLowerCase() === (payload?.last_name || '').toLowerCase() &&
+        p.first_name?.toLowerCase() === (payload?.first_name || '').toLowerCase() &&
+        (!payload?.city || p.city?.toLowerCase() === (payload.city || '').toLowerCase()) &&
+        (!payload?.state || p.state === payload.state)
+      );
+      return match?.id || null;
+    } catch (err) {
+      console.error('Error searching physicians:', err);
+      return null;
+    }
+  };
+
+  // Determine request/physician statuses based on data completeness
+  const determineStatuses = (data) => {
+    const hasFax = !!(data?.fax && String(data.fax).trim());
+    const hasNpi = !!(data?.npi || data?.npi_number);
+    const requestStatus = hasFax ? 'doctor_selected' : (hasNpi ? 'doctor_missing_fax' : 'doctor_missing_info');
+    const physicianStatus = hasFax ? 'active' : (hasNpi ? 'needs_fax' : 'missing_info');
+    return { requestStatus, physicianStatus };
+  };
+
+  // Create or reuse physician and return id
+  const upsertPhysicianAndGetId = async (sourceData) => {
+    const payload = mapPhysicianToPayload(sourceData);
+    if (!payload?.first_name || !payload?.last_name) return null;
+    const { physicianStatus } = determineStatuses(sourceData);
+    const existingId = await findExistingPhysicianId(payload);
+    if (existingId) return existingId;
+    try {
+      const res = await axios.post('/api/physicians', { ...payload, status: physicianStatus });
+      return res?.data?.data?.id || res?.data?.id || null;
+    } catch (err) {
+      console.error('Error creating physician:', err);
+      return null;
+    }
+  };
+
+  // Save physician selection across all requests when navigating away from step 1
+  const savePhysicianSelectionIfPresent = async () => {
+    // Prefer enriched finalPhysicianData; fall back to manual form
+    const data = finalPhysicianData || physicianForm;
+    const hasMinimum = !!(data?.lastName && data?.firstName);
+    if (!hasMinimum || !requestIds?.length) return; // nothing to save
+
+    const physicianId = await upsertPhysicianAndGetId(data);
+    if (!physicianId) return;
+
+    const { requestStatus } = determineStatuses(data);
+    const changeLog = `Physician set via wizard: ${toTitleCase(data.lastName)}, ${toTitleCase(data.firstName)}${data.npi ? ` (NPI ${data.npi})` : ''}. Status: ${requestStatus}. Timestamp: ${new Date().toISOString()}`;
+
+    try {
+      await Promise.all(
+        requestIds.map((id) =>
+          axios.put(`/api/requests/${id}`, {
+            physician_id: physicianId,
+            status: requestStatus,
+            change_log: changeLog,
+          })
+        )
+      );
+    } catch (err) {
+      console.error('Error updating requests with physician:', err);
     }
   };
 
@@ -1408,6 +1628,7 @@ const RequestWizard = () => {
                   <List>
                     {/* Can't Find My Physician option */}
                     <ListItem
+                      key="cant-find-doctor"
                       button
                       onClick={handleCantFindPhysician}
                       sx={{
@@ -1432,10 +1653,10 @@ const RequestWizard = () => {
                       />
                     </ListItem>
                     {/* Actual search results */}
-                    {physicianSuggestions.map((physician) => (
+                    {physicianSuggestions.map((physician, idx) => (
                       <ListItem
                         button
-                        key={physician.number}
+                        key={physician.number || `${physician.basic?.last_name}-${physician.basic?.first_name}-${idx}`}
                         onClick={() => handleSelectPhysician(physician)}
                         sx={{
                           '&:hover': {

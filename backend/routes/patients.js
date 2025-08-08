@@ -14,6 +14,26 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET patient by email (case-insensitive)
+router.get('/by-email/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const query = `
+            SELECT * FROM patients 
+            WHERE LOWER(email) = LOWER($1) AND deleted = false 
+            LIMIT 1
+        `;
+        const { rows } = await pool.query(query, [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Patient not found' });
+        }
+        return res.json({ success: true, data: rows[0] });
+    } catch (err) {
+        console.error('Error fetching patient by email:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
 // GET single patient by ID
 router.get('/:id', async (req, res) => {
     try {
