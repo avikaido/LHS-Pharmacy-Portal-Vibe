@@ -20,10 +20,30 @@ export default {
     { type: 'webhook', destination: 'zoho_flow' },
   ],
 
+  RequestPatientCompleted: [
+    { type: 'webhook', destination: 'zoho_flow' },
+  ],
+
   RequestCompleted: [
     { type: 'webhook', destination: 'zoho_flow' },
     // { type: 'email', to: 'patient', templateKey: 'request_completed_patient' },
     // { type: 'email', to: 'pharmacist', templateKey: 'request_completed_pharmacist' },
+  ],
+
+  PatientCreated: [
+    { type: 'webhook', destination: 'zoho_flow' },
+  ],
+
+  PhysicianCreated: [
+    { type: 'webhook', destination: 'zoho_flow' },
+  ],
+
+  PharmacyCreated: [
+    { type: 'webhook', destination: 'zoho_flow' },
+  ],
+
+  ItemCreated: [
+    { type: 'webhook', destination: 'zoho_flow' },
   ],
 };
 

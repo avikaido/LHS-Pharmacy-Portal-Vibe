@@ -1,4 +1,6 @@
 import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import fileUpload from 'express-fileupload';
@@ -9,6 +11,7 @@ import fileUpload from 'express-fileupload';
 // const EmailPassword = require("supertokens-node/recipe/emailpassword");
 // const EmailVerification = require("supertokens-node/recipe/emailverification");
 import pool from './db.js';
+import expressRaw from 'express';
 import usersRoutes from './routes/users.js';
 import patientsRoutes from './routes/patients.js';
 import pharmacistsRoutes from './routes/pharmacists.js';
@@ -53,8 +56,12 @@ supertokens.init({
 
 const app = express();
 
-// Parse JSON bodies first
+// Telnyx webhook requires raw body for signature verification
+app.use('/api/faxes/webhook', expressRaw.raw({ type: 'application/json' }));
+
+// Parse JSON bodies for all other routes
 app.use(express.json());
+// Note: for Telnyx webhook signature verification, we may need raw body middleware later.
 
 // Configure CORS to allow requests from your frontend
 app.use(cors({

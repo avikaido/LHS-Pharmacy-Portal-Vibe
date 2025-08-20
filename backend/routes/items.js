@@ -1,5 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { eventBus } from '../services/events/eventBus.js';
+import { DomainEvent } from '../services/events/eventBus.js';
+import { buildItemPayload } from '../services/events/payloadBuilders.js';
 
 const router = express.Router();
 
@@ -176,7 +179,17 @@ router.post('/', async (req, res) => {
         ];
 
         const result = await pool.query(insertQuery, values);
-        res.status(201).json(result.rows[0]);
+        const created = result.rows[0];
+        
+        // Emit ItemCreated event to integration system
+        const event = new DomainEvent({
+          eventType: 'ItemCreated',
+          aggregate: { itemId: created.id },
+          payload: buildItemPayload(created),
+        });
+        eventBus.publish(event);
+        
+        res.status(201).json(created);
     } catch (err) {
         console.error(err.message);
         if (err.code === '23505') { // Unique violation

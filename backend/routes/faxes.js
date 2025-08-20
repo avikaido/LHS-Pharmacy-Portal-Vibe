@@ -1,15 +1,16 @@
 import express from 'express';
-import telnyx from 'telnyx';
 import dotenv from 'dotenv';
 import pool from '../db.js';
 import fs from 'fs';
+import { sendFax, verifyWebhook } from '../services/fax/telnyxFaxService.js';
+import { DomainEvent, eventBus } from '../services/events/eventBus.js';
+import { buildFaxPayload } from '../services/events/payloadBuilders.js';
 
 dotenv.config();
 
 const router = express.Router();
 
-// Initialize Telnyx client
-const telnyxClient = telnyx(process.env.TELNYX_API_KEY);
+// Telnyx client handled inside service (lazy init)
 
 // GET archived faxes (must come before /:id route)
 router.get('/archived', async (req, res) => {
@@ -120,14 +121,28 @@ router.post('/send', async (req, res) => {
             contents_length: base64Data.length
         });
 
-        // Send fax using Telnyx
-        const faxMedia = await telnyxClient.faxes.create(faxParams);
+        // Send fax using Telnyx service (unified place)
+        const faxMedia = await sendFax({
+          base64Pdf: base64Data,
+          to: faxNumber,
+          from: process.env.TELNYX_TEST_FAX_NUMBER,
+          connectionId: process.env.TELNYX_APP_ID,
+          mediaName: 'prescription.pdf',
+          quality: 'high',
+        });
 
         // Store fax record in database
         const newFax = await pool.query(
             `INSERT INTO faxes (request_id, sent_to, sent_by, status, telnyx_fax_id, pharmacy_id, physician_npi) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
             [requestId, faxNumber, userId, 'pending', faxMedia.id, pharmacyId || null, physicianNpi || null]
         );
+
+        // Emit FaxQueued
+        eventBus.publish(new DomainEvent({
+          eventType: 'FaxQueued',
+          aggregate: { requestId: requestId },
+          payload: buildFaxPayload(newFax.rows[0]),
+        }));
 
         res.json({
             message: 'Fax queued for sending',
@@ -307,19 +322,49 @@ router.get('/:id/status', async (req, res) => {
     }
 });
 
-// Webhook endpoint for fax status updates
+// Webhook endpoint for fax status updates (outbound + inbound)
 router.post('/webhook', async (req, res) => {
     try {
         const event = req.body;
-        
-        // Verify webhook authenticity (you should implement proper verification)
-        
-        if (event.data && event.data.fax_id) {
-            // Update fax status in database
-            await pool.query(
-                "UPDATE faxes SET status = $1 WHERE id = $2",
-                [event.data.status, event.data.fax_id]
-            );
+        if (!verifyWebhook(req)) return res.sendStatus(401);
+
+        // Telnyx sends many event types: fax.queued, fax.delivered, fax.failed, fax.received
+        const type = event?.data?.event_type || event?.data?.record_type || event?.type;
+
+        // Outbound status updates include a Fax id
+        if (event.data?.payload?.fax_id && event.data?.payload?.status) {
+          const { rows } = await pool.query(
+            'UPDATE faxes SET status = $1, updated_on = now() WHERE telnyx_fax_id = $2 RETURNING *',
+            [event.data.payload.status, event.data.payload.fax_id]
+          );
+          if (rows[0]) {
+            const evtType = event.data.payload.status === 'delivered' ? 'FaxDelivered' : (event.data.payload.status === 'failed' ? 'FaxFailed' : 'FaxUpdated');
+            eventBus.publish(new DomainEvent({
+              eventType: evtType,
+              aggregate: { requestId: rows[0].request_id || rows[0].requests },
+              payload: buildFaxPayload(rows[0]),
+            }));
+          }
+        }
+
+        // Inbound fax received — event contains media info
+        if (type && String(type).includes('fax.received')) {
+          const mediaUrl = event.data?.payload?.media_url || event.data?.payload?.original_media_url;
+          const from = event.data?.payload?.from;
+          const to = event.data?.payload?.to;
+          // Store basic inbound fax row for later OCR pipeline
+          const { rows } = await pool.query(
+            `INSERT INTO faxes (fax_number, type, status, direction, doc_link, created_on, created_by, updated_on, updated_by, deleted)
+             VALUES ($1, 'incoming', 'received', 'incoming', $2, now(), 1, now(), 1, false) RETURNING *`,
+            [from || null, mediaUrl || null]
+          );
+          if (rows[0]) {
+            eventBus.publish(new DomainEvent({
+              eventType: 'FaxReceived',
+              aggregate: { requestId: rows[0].request_id || rows[0].requests },
+              payload: buildFaxPayload(rows[0]),
+            }));
+          }
         }
 
         res.sendStatus(200);

@@ -1,5 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { eventBus } from '../services/events/eventBus.js';
+import { DomainEvent } from '../services/events/eventBus.js';
+import { buildPharmacyPayload } from '../services/events/payloadBuilders.js';
 
 const router = express.Router();
 
@@ -357,10 +360,19 @@ router.post('/', async (req, res) => {
     ];
 
     const { rows } = await pool.query(query, values);
+    const created = rows[0];
+    
+    // Emit PharmacyCreated event to integration system
+    const event = new DomainEvent({
+      eventType: 'PharmacyCreated',
+      aggregate: { pharmacyId: created.id },
+      payload: buildPharmacyPayload(created),
+    });
+    eventBus.publish(event);
     
     res.status(201).json({ 
       success: true, 
-      data: rows[0],
+      data: created,
       message: 'Pharmacy created successfully'
     });
   } catch (error) {
